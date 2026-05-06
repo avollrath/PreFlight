@@ -1,5 +1,8 @@
-import { app, BrowserWindow, ipcMain, Menu } from 'electron';
-import { fileURLToPath } from 'node:url';
+import type {
+  BrowserWindow as BrowserWindowInstance,
+  Event as ElectronEvent,
+  Input
+} from 'electron';
 import path from 'node:path';
 import {
   getChecklistState,
@@ -7,9 +10,9 @@ import {
   setChecklistItemCompletion
 } from './store.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const { app, BrowserWindow, ipcMain, Menu } = require('electron') as typeof import('electron');
 
-let mainWindow: BrowserWindow | null = null;
+let mainWindow: BrowserWindowInstance | null = null;
 let locked = true;
 
 function createWindow() {
@@ -28,7 +31,7 @@ function createWindow() {
     backgroundColor: '#101418',
     show: false,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false
     }
@@ -36,7 +39,7 @@ function createWindow() {
 
   mainWindow.setAlwaysOnTop(true, 'screen-saver');
 
-  mainWindow.on('close', (event) => {
+  mainWindow.on('close', (event: ElectronEvent) => {
     if (locked) {
       event.preventDefault();
       mainWindow?.show();
@@ -53,7 +56,7 @@ function createWindow() {
     }
   });
 
-  mainWindow.webContents.on('before-input-event', (event, input) => {
+  mainWindow.webContents.on('before-input-event', (event: ElectronEvent, input: Input) => {
     if (locked && input.alt && input.key.toLowerCase() === 'f4') {
       event.preventDefault();
       mainWindow?.focus();

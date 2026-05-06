@@ -1,7 +1,8 @@
-import { app } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
+
+const { app } = require('electron') as typeof import('electron');
 
 export type ChecklistItem = {
   id: string;
