@@ -1,43 +1,50 @@
 :root {
-  --neon: #39ff14;
-  --neon-soft: rgba(57, 255, 20, 0.24);
-  --neon-dim: rgba(57, 255, 20, 0.12);
-  --panel: rgba(3, 12, 7, 0.92);
-  --panel-strong: #041007;
-  --line: rgba(57, 255, 20, 0.36);
-  --line-dim: rgba(57, 255, 20, 0.16);
-  --text: #dfffe0;
-  --muted: #7ea579;
-  --danger: #ff3864;
+  --accent: #ff1744;
+  --accent-soft: rgba(255, 23, 68, 0.24);
+  --accent-glow: rgba(255, 23, 68, 0.42);
+  --accent-dim: rgba(255, 23, 68, 0.12);
+  --panel: rgba(14, 2, 6, 0.93);
+  --panel-strong: #120309;
+  --panel-border: rgba(255, 23, 68, 0.38);
+  --accent-dim-line: rgba(255, 23, 68, 0.17);
+  --text: #ffe4ea;
+  --muted: #b57784;
+  --danger: #ff6a88;
 }
 
 .app-shell {
+  width: 100vw;
+  height: 100vh;
   min-height: 100vh;
   display: grid;
   place-items: center;
   padding: clamp(22px, 4vw, 56px);
+  overflow: hidden;
   background:
-    repeating-linear-gradient(0deg, rgba(57, 255, 20, 0.035) 0 1px, transparent 1px 4px),
-    linear-gradient(rgba(57, 255, 20, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(57, 255, 20, 0.04) 1px, transparent 1px),
-    radial-gradient(circle at 50% 0%, rgba(57, 255, 20, 0.12), transparent 38%),
-    linear-gradient(135deg, #010201 0%, #031006 45%, #000 100%);
+    repeating-linear-gradient(0deg, rgba(255, 23, 68, 0.035) 0 1px, transparent 1px 4px),
+    linear-gradient(rgba(255, 23, 68, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 23, 68, 0.045) 1px, transparent 1px),
+    radial-gradient(circle at 50% 0%, rgba(255, 23, 68, 0.15), transparent 38%),
+    linear-gradient(135deg, #050104 0%, #140309 45%, #000 100%);
   background-size: auto, 42px 42px, 42px 42px, auto, auto;
 }
 
 .preflight-panel {
   position: relative;
-  width: min(920px, 100%);
-  border: 1px solid var(--line);
+  width: min(1400px, calc(100vw - 96px));
+  max-height: calc(100vh - 72px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  border: 1px solid var(--panel-border);
   border-radius: 2px;
   padding: clamp(28px, 4vw, 46px);
   color: var(--text);
   background:
-    linear-gradient(180deg, rgba(57, 255, 20, 0.06), transparent 22%),
+    linear-gradient(180deg, rgba(255, 23, 68, 0.07), transparent 22%),
     var(--panel);
   box-shadow:
-    0 0 0 1px rgba(57, 255, 20, 0.08) inset,
-    0 0 34px rgba(57, 255, 20, 0.16),
+    0 0 0 1px rgba(255, 23, 68, 0.09) inset,
+    0 0 34px rgba(255, 23, 68, 0.18),
     0 28px 90px rgba(0, 0, 0, 0.72);
 }
 
@@ -53,17 +60,17 @@
 .preflight-panel::before {
   top: -1px;
   left: -1px;
-  border-top: 2px solid var(--neon);
-  border-left: 2px solid var(--neon);
-  box-shadow: -4px -4px 18px var(--neon-soft);
+  border-top: 2px solid var(--accent);
+  border-left: 2px solid var(--accent);
+  box-shadow: -4px -4px 18px var(--accent-soft);
 }
 
 .preflight-panel::after {
   right: -1px;
   bottom: -1px;
-  border-right: 2px solid var(--neon);
-  border-bottom: 2px solid var(--neon);
-  box-shadow: 4px 4px 18px var(--neon-soft);
+  border-right: 2px solid var(--accent);
+  border-bottom: 2px solid var(--accent);
+  box-shadow: 4px 4px 18px var(--accent-soft);
 }
 
 .top-row,
@@ -78,12 +85,12 @@
 .eyebrow,
 .progress-row,
 .settings-kicker {
-  color: var(--neon);
+  color: var(--accent);
   font-size: 0.82rem;
   font-weight: 400;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  text-shadow: 0 0 10px var(--neon-soft);
+  text-shadow: 0 0 10px var(--accent-soft);
 }
 
 .shortcut-label {
@@ -98,11 +105,11 @@
   height: 14px;
   margin: 26px 0 24px;
   overflow: hidden;
-  border: 1px solid var(--line-dim);
+  border: 1px solid var(--accent-dim-line);
   background:
-    linear-gradient(90deg, rgba(57, 255, 20, 0.09), transparent 34%, rgba(57, 255, 20, 0.06)),
-    #020602;
-  box-shadow: 0 0 18px rgba(57, 255, 20, 0.08) inset;
+    linear-gradient(90deg, rgba(255, 23, 68, 0.1), transparent 34%, rgba(255, 23, 68, 0.07)),
+    #090104;
+  box-shadow: 0 0 18px rgba(255, 23, 68, 0.1) inset;
 }
 
 .scan-beam {
@@ -110,9 +117,9 @@
   inset-block: -8px;
   left: 0;
   width: 18%;
-  background: linear-gradient(90deg, transparent, rgba(57, 255, 20, 0.28), var(--neon), rgba(57, 255, 20, 0.28), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 23, 68, 0.3), var(--accent), rgba(255, 23, 68, 0.3), transparent);
   filter: blur(1px);
-  box-shadow: 0 0 20px var(--neon), 0 0 44px var(--neon-soft);
+  box-shadow: 0 0 20px var(--accent), 0 0 44px var(--accent-soft);
   animation: scan-bounce 2.8s ease-in-out infinite alternate;
 }
 
@@ -127,7 +134,7 @@
 
 .app-name {
   margin: 0;
-  color: #f1fff0;
+  color: #fff0f3;
   font-size: 1.05rem;
   letter-spacing: 0.32em;
   text-transform: uppercase;
@@ -135,20 +142,20 @@
 
 h1 {
   margin: 12px 0;
-  color: #f4fff2;
+  color: #fff4f6;
   font-size: clamp(2.8rem, 7vw, 5.8rem);
   font-weight: 400;
   line-height: 0.92;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   text-shadow:
-    0 0 14px rgba(57, 255, 20, 0.28),
-    0 0 34px rgba(57, 255, 20, 0.12);
+    0 0 14px rgba(255, 23, 68, 0.34),
+    0 0 34px rgba(255, 23, 68, 0.18);
 }
 
 h2 {
   margin: 0;
-  color: #f4fff2;
+  color: #fff4f6;
   font-size: 1.7rem;
   font-weight: 400;
   letter-spacing: 0.1em;
@@ -157,7 +164,7 @@ h2 {
 
 .lede {
   margin: 0 0 34px;
-  color: #a8cfa1;
+  color: #d99aa8;
   font-size: 1rem;
   letter-spacing: 0.04em;
 }
@@ -174,18 +181,18 @@ h2 {
   height: 12px;
   margin-bottom: 22px;
   overflow: hidden;
-  border: 1px solid var(--line);
+  border: 1px solid var(--panel-border);
   border-radius: 0;
-  background: #010301;
-  box-shadow: 0 0 18px rgba(57, 255, 20, 0.1) inset;
+  background: #070103;
+  box-shadow: 0 0 18px rgba(255, 23, 68, 0.12) inset;
 }
 
 .progress-fill {
   height: 100%;
   background:
     repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.22) 0 8px, transparent 8px 14px),
-    linear-gradient(90deg, rgba(57, 255, 20, 0.7), var(--neon));
-  box-shadow: 0 0 18px var(--neon-soft);
+    linear-gradient(90deg, rgba(255, 23, 68, 0.72), var(--accent));
+  box-shadow: 0 0 18px var(--accent-soft);
   transition: width 180ms ease;
 }
 
@@ -202,12 +209,12 @@ h2 {
   align-items: center;
   gap: 14px;
   min-height: 56px;
-  padding: 0 16px;
-  border: 1px solid var(--line-dim);
+  padding: 0 22px;
+  border: 1px solid var(--accent-dim-line);
   border-radius: 0;
-  color: #9bb695;
+  color: #c58b97;
   background:
-    linear-gradient(90deg, rgba(57, 255, 20, 0.05), transparent),
+    linear-gradient(90deg, rgba(255, 23, 68, 0.055), transparent),
     rgba(0, 0, 0, 0.28);
   transition:
     border-color 160ms ease,
@@ -217,27 +224,27 @@ h2 {
 }
 
 .checklist label:has(input:checked) {
-  border-color: rgba(57, 255, 20, 0.62);
-  color: #e6ffe3;
+  border-color: rgba(255, 23, 68, 0.68);
+  color: #ffe7ec;
   background:
-    linear-gradient(90deg, rgba(57, 255, 20, 0.18), rgba(57, 255, 20, 0.04)),
+    linear-gradient(90deg, rgba(255, 23, 68, 0.2), rgba(255, 23, 68, 0.05)),
     rgba(0, 0, 0, 0.38);
   box-shadow:
-    0 0 16px rgba(57, 255, 20, 0.15),
-    0 0 18px rgba(57, 255, 20, 0.08) inset;
-  text-shadow: 0 0 10px rgba(57, 255, 20, 0.32);
+    0 0 16px rgba(255, 23, 68, 0.18),
+    0 0 18px rgba(255, 23, 68, 0.1) inset;
+  text-shadow: 0 0 10px rgba(255, 23, 68, 0.34);
 }
 
 .checklist label:has(input:checked) span {
   text-decoration: line-through;
-  text-decoration-color: rgba(57, 255, 20, 0.48);
+  text-decoration-color: rgba(255, 23, 68, 0.52);
 }
 
 .checklist input,
 .startup-toggle input {
   width: 20px;
   height: 20px;
-  accent-color: var(--neon);
+  accent-color: var(--accent);
 }
 
 .actions {
@@ -248,12 +255,12 @@ h2 {
 
 button {
   min-height: 48px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--panel-border);
   border-radius: 0;
   padding: 0 18px;
-  color: #031004;
-  background: var(--neon);
-  box-shadow: 0 0 18px var(--neon-soft);
+  color: #160106;
+  background: var(--accent);
+  box-shadow: 0 0 18px var(--accent-soft);
   font: inherit;
   font-weight: 400;
   letter-spacing: 0.12em;
@@ -268,13 +275,13 @@ button {
 
 button:not(:disabled):hover {
   transform: translateY(-1px);
-  box-shadow: 0 0 26px rgba(57, 255, 20, 0.42);
+  box-shadow: 0 0 26px var(--accent-glow);
 }
 
 button:disabled {
-  border-color: rgba(126, 165, 121, 0.22);
-  color: #50624c;
-  background: #091009;
+  border-color: rgba(181, 119, 132, 0.24);
+  color: #70505a;
+  background: #12070a;
   box-shadow: none;
   cursor: not-allowed;
 }
@@ -283,9 +290,9 @@ button:focus-visible,
 .checklist input:focus-visible,
 .settings-item input:focus-visible,
 .startup-toggle input:focus-visible {
-  outline: 2px solid var(--neon);
+  outline: 2px solid var(--accent);
   outline-offset: 3px;
-  box-shadow: 0 0 18px var(--neon-soft);
+  box-shadow: 0 0 18px var(--accent-soft);
 }
 
 .dev-unlock {
@@ -297,8 +304,8 @@ button:focus-visible,
 
 .ghost-button {
   min-height: 38px;
-  color: var(--neon);
-  background: rgba(57, 255, 20, 0.05);
+  color: var(--accent);
+  background: rgba(255, 23, 68, 0.06);
   box-shadow: none;
 }
 
@@ -309,21 +316,21 @@ button:focus-visible,
   place-items: center;
   padding: 24px;
   background:
-    repeating-linear-gradient(0deg, rgba(57, 255, 20, 0.03) 0 1px, transparent 1px 5px),
-    rgba(0, 4, 1, 0.86);
+    repeating-linear-gradient(0deg, rgba(255, 23, 68, 0.035) 0 1px, transparent 1px 5px),
+    rgba(8, 0, 3, 0.88);
 }
 
 .settings-panel {
-  width: min(760px, 100%);
+  width: min(1200px, calc(100vw - 96px));
   max-height: calc(100vh - 48px);
   overflow: auto;
-  border: 1px solid var(--line);
+  border: 1px solid var(--panel-border);
   border-radius: 0;
   padding: 28px;
   color: var(--text);
   background: var(--panel-strong);
   box-shadow:
-    0 0 34px rgba(57, 255, 20, 0.14),
+    0 0 34px rgba(255, 23, 68, 0.16),
     0 24px 80px rgba(0, 0, 0, 0.7);
 }
 
@@ -344,9 +351,9 @@ button:focus-visible,
   min-height: 50px;
   margin-bottom: 8px;
   padding: 0 14px;
-  border: 1px solid var(--line-dim);
-  color: #cce8c8;
-  background: rgba(57, 255, 20, 0.04);
+  border: 1px solid var(--accent-dim-line);
+  color: #f0c1ca;
+  background: rgba(255, 23, 68, 0.045);
 }
 
 .settings-item {
@@ -358,17 +365,17 @@ button:focus-visible,
 .settings-item input {
   min-height: 46px;
   width: 100%;
-  border: 1px solid var(--line-dim);
+  border: 1px solid var(--accent-dim-line);
   border-radius: 0;
   padding: 0 12px;
   color: var(--text);
-  caret-color: var(--neon);
-  background: #020602;
+  caret-color: var(--accent);
+  background: #090104;
 }
 
 .settings-item input:focus {
-  border-color: var(--neon);
-  box-shadow: 0 0 16px var(--neon-soft);
+  border-color: var(--accent);
+  box-shadow: 0 0 16px var(--accent-soft);
 }
 
 @media (prefers-reduced-motion: reduce) {

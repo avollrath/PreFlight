@@ -15,7 +15,8 @@ const {
   BrowserWindow,
   globalShortcut,
   ipcMain,
-  Menu
+  Menu,
+  screen
 } = require('electron') as typeof import('electron');
 
 const isDev =
@@ -82,7 +83,7 @@ function fallbackHtml(message: string) {
           }
           h1 { margin: 0 0 12px; }
           p { color: #b7c0bb; line-height: 1.5; }
-          code { color: #70d7a7; }
+          code { color: #ff1744; }
         </style>
       </head>
       <body>
@@ -123,12 +124,52 @@ function logWindowSafetyState() {
   });
 }
 
+function logRendererLayoutState() {
+  if (!mainWindow) {
+    return;
+  }
+
+  void mainWindow.webContents
+    .executeJavaScript(
+      `({
+        innerWidth: window.innerWidth,
+        innerHeight: window.innerHeight,
+        devicePixelRatio: window.devicePixelRatio,
+        html: {
+          width: document.documentElement.getBoundingClientRect().width,
+          height: document.documentElement.getBoundingClientRect().height
+        },
+        body: {
+          width: document.body.getBoundingClientRect().width,
+          height: document.body.getBoundingClientRect().height
+        },
+        root: {
+          width: document.getElementById('root')?.getBoundingClientRect().width,
+          height: document.getElementById('root')?.getBoundingClientRect().height
+        },
+        shell: {
+          width: document.querySelector('.app-shell')?.getBoundingClientRect().width,
+          height: document.querySelector('.app-shell')?.getBoundingClientRect().height
+        },
+        panel: {
+          width: document.querySelector('.preflight-panel')?.getBoundingClientRect().width,
+          height: document.querySelector('.preflight-panel')?.getBoundingClientRect().height
+        }
+      })`
+    )
+    .then((layout) => log('Renderer layout state', layout))
+    .catch((error) => log('Renderer layout state unavailable', error));
+}
+
 function createWindow() {
   Menu.setApplicationMenu(null);
+  const primaryDisplayBounds = screen.getPrimaryDisplay().bounds;
 
   mainWindow = new BrowserWindow({
-    width: isOverlayMode ? 1280 : 1800,
-    height: isOverlayMode ? 800 : 1000,
+    x: isOverlayMode ? primaryDisplayBounds.x : undefined,
+    y: isOverlayMode ? primaryDisplayBounds.y : undefined,
+    width: isOverlayMode ? primaryDisplayBounds.width : 1800,
+    height: isOverlayMode ? primaryDisplayBounds.height : 1000,
     minWidth: 900,
     minHeight: 620,
     title: 'PreFlight',
@@ -147,6 +188,7 @@ function createWindow() {
   });
 
   if (isOverlayMode) {
+    mainWindow.setBounds(primaryDisplayBounds);
     mainWindow.setAlwaysOnTop(true, 'screen-saver');
   }
 
@@ -191,6 +233,10 @@ function createWindow() {
   mainWindow.webContents.on('did-finish-load', () => {
     debugLog(`Renderer finished loading: ${mainWindow?.webContents.getURL()}`);
     mainWindow?.setTitle('PreFlight');
+
+    if (isOverlayMode || isDebug) {
+      logRendererLayoutState();
+    }
   });
 
   mainWindow.webContents.on('render-process-gone', (_event, details) => {
@@ -235,7 +281,9 @@ function createWindow() {
     mainWindow?.show();
 
     if (isOverlayMode) {
+      mainWindow?.setBounds(primaryDisplayBounds);
       mainWindow?.setFullScreen(true);
+      mainWindow?.setAlwaysOnTop(true, 'screen-saver');
     }
 
     mainWindow?.focus();

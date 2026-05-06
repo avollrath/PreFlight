@@ -52,7 +52,7 @@ npm run dev:debug
 npm run dev:safe
 ```
 
-The UI uses an 80s neon dashboard style with the Electrolize font, green system-status controls, terminal-like panels, and a lightweight animated scan bar.
+The UI uses an 80s neon dashboard style with the Electrolize font, red system-status controls, terminal-like panels, and a lightweight animated scan bar.
 
 ## Build And Run
 
