@@ -39,6 +39,10 @@ let mainWindow: BrowserWindowInstance | null = null;
 let tray: TrayInstance | null = null;
 const blockerWindows = new Map<number, BrowserWindowInstance>();
 type AppMode = 'locked' | 'edit';
+type OverlaySyncOptions = {
+  forceRepaint?: boolean;
+  recreateBlockers?: boolean;
+};
 
 let appMode: AppMode = 'edit';
 let locked = false;
@@ -471,7 +475,7 @@ function createWindow(mode: AppMode = appMode) {
       window.setBounds(primaryDisplayBounds);
       window.setFullScreen(true);
       window.setAlwaysOnTop(true, 'screen-saver');
-      syncOverlayWindows({ recreateBlockers: true });
+      syncOverlayWindows();
     }
 
     window.focus();
@@ -532,7 +536,7 @@ function unlockToTray(reason: string) {
   }
 }
 
-function enterLockedMode(reason: string, options: { recreateBlockers?: boolean } = {}) {
+function enterLockedMode(reason: string, options: OverlaySyncOptions = {}) {
   appMode = isOverlayMode ? 'locked' : 'edit';
   locked = appMode === 'locked' && isOverlayMode;
   openSettingsOnNextLoad = false;
@@ -549,8 +553,7 @@ function enterLockedMode(reason: string, options: { recreateBlockers?: boolean }
   }
 
   recreateMainWindow('locked');
-  syncOverlayWindows({ recreateBlockers: options.recreateBlockers });
-  scheduleOverlayRefreshes(reason);
+  scheduleOverlayRefreshes(reason, options);
 }
 
 function configureInitialMode() {
@@ -571,6 +574,15 @@ function configureInitialMode() {
 }
 
 function createBlockerWindow(display: Display) {
+  const existingBlocker = blockerWindows.get(display.id);
+
+  if (existingBlocker && !existingBlocker.isDestroyed()) {
+    forceBlockerVisible(existingBlocker, display);
+    return existingBlocker;
+  }
+
+  blockerWindows.delete(display.id);
+
   const blocker = new BrowserWindow({
     x: display.bounds.x,
     y: display.bounds.y,
@@ -595,7 +607,13 @@ function createBlockerWindow(display: Display) {
   });
 
   // Position before loading so the first paint happens on the intended monitor.
-  forceBlockerVisible(blocker, display, false);
+  forceBlockerVisible(blocker, display, { shouldShow: false });
+
+  blocker.on('closed', () => {
+    if (blockerWindows.get(display.id) === blocker) {
+      blockerWindows.delete(display.id);
+    }
+  });
 
   blocker.on('close', (event: ElectronEvent) => {
     if (locked && !isQuitting) {
@@ -631,16 +649,29 @@ function createBlockerWindow(display: Display) {
   void blocker.loadURL(blockerHtml());
   blockerWindows.set(display.id, blocker);
   log('Created secondary display blocker', { id: display.id, bounds: display.bounds });
+  return blocker;
 }
 
-function forceBlockerVisible(blocker: BrowserWindowInstance, display: Display, shouldShow = true) {
+function forceBlockerVisible(
+  blocker: BrowserWindowInstance,
+  display: Display,
+  options: { forceRepaint?: boolean; shouldShow?: boolean } = {}
+) {
   if (blocker.isDestroyed()) {
     return;
   }
 
+  const shouldShow = options.shouldShow ?? true;
+
   // Sleep/resume can leave secondary windows in the compositor but not visibly painted.
-  // Reapplying geometry, topmost state, visibility, and an explicit invalidation forces
-  // Windows to redraw the static blocker immediately on the target display.
+  // Reapplying geometry, topmost state, visibility, and explicit invalidation asks
+  // Windows to redraw the static blocker immediately on the target display. During
+  // resume-specific refreshes we briefly hide/show the window as a stronger compositor
+  // nudge without reloading the blocker HTML.
+  if (options.forceRepaint && blocker.isVisible()) {
+    blocker.hide();
+  }
+
   blocker.setBounds(display.bounds);
   blocker.setFullScreen(true);
   blocker.setBounds(display.bounds);
@@ -651,10 +682,22 @@ function forceBlockerVisible(blocker: BrowserWindowInstance, display: Display, s
     blocker.showInactive();
     blocker.moveTop();
     blocker.webContents.invalidate();
+
+    if (options.forceRepaint) {
+      setTimeout(() => {
+        if (blocker.isDestroyed()) {
+          return;
+        }
+
+        blocker.showInactive();
+        blocker.moveTop();
+        blocker.webContents.invalidate();
+      }, 50);
+    }
   }
 }
 
-function syncOverlayWindows(options: { recreateBlockers?: boolean } = {}) {
+function syncOverlayWindows(options: OverlaySyncOptions = {}) {
   if (!isOverlayMode || appMode !== 'locked' || !locked) {
     return;
   }
@@ -686,7 +729,7 @@ function syncOverlayWindows(options: { recreateBlockers?: boolean } = {}) {
     const blocker = blockerWindows.get(display.id);
 
     if (blocker) {
-      forceBlockerVisible(blocker, display);
+      forceBlockerVisible(blocker, display, { forceRepaint: options.forceRepaint });
       continue;
     }
 
@@ -696,15 +739,15 @@ function syncOverlayWindows(options: { recreateBlockers?: boolean } = {}) {
   mainWindow?.focus();
 }
 
-function scheduleOverlayRefreshes(reason: string) {
-  for (const delay of [100, 500, 1250, 2500]) {
+function scheduleOverlayRefreshes(reason: string, options: OverlaySyncOptions = {}) {
+  for (const delay of [0, 100, 500, 1250, 2500, 5000]) {
     setTimeout(() => {
       if (!locked || appMode !== 'locked') {
         return;
       }
 
       log(`Refreshing locked overlay windows after ${reason}`, { delay });
-      syncOverlayWindows();
+      syncOverlayWindows({ forceRepaint: options.forceRepaint ?? options.recreateBlockers });
     }, delay);
   }
 }
@@ -739,15 +782,15 @@ app.whenReady().then(() => {
 
   powerMonitor.on('resume', () => {
     if (getStartOnStartupWakeEnabled()) {
-      enterLockedMode('power resume', { recreateBlockers: true });
+      enterLockedMode('power resume', { forceRepaint: true, recreateBlockers: true });
       return;
     }
 
     log('Power resume detected; startup/wake lock is disabled');
   });
 
-  if (isOverlayMode) {
-    syncOverlayWindows();
+  if (isOverlayMode && appMode === 'locked') {
+    scheduleOverlayRefreshes('startup');
   }
 });
 
