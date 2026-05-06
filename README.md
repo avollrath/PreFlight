@@ -28,7 +28,15 @@ npm install
 npm run dev
 ```
 
-The app runs with Vite hot reload and Electron. During MVP development, use **Dev Unlock** or `Ctrl+Shift+U` if the overlay is in your way.
+`npm run dev` uses safe development mode. It opens a normal resizable window, does not use fullscreen, does not stay always-on-top, does not block close, and opens DevTools automatically.
+
+You can also run the safe script explicitly:
+
+```bash
+npm run dev:safe
+```
+
+During MVP development, use **Dev Unlock** or `Ctrl+Shift+U` if the window is in your way. The shortcut is handled in the Electron main process, so it still works if React fails to load.
 
 ## Build And Run
 
@@ -64,6 +72,32 @@ Build output is ignored by git.
 PreFlight stores local configuration in Electron's `userData` folder as `preflight-store.json`.
 
 The checklist definitions are stored locally. Completion state is keyed by local date, so the checklist automatically starts fresh when the date changes.
+
+To reset local app data on Windows, close PreFlight and remove:
+
+```powershell
+Remove-Item "$env:APPDATA\PreFlight" -Recurse -Force
+```
+
+## Diagnostics
+
+If PreFlight opens black in development, press `Ctrl+Shift+U` first. Safe dev mode should quit immediately even if the renderer is broken.
+
+Launch safe mode:
+
+```bash
+npm run dev:safe
+```
+
+Logs are printed in the terminal running `npm run dev`. The Electron main process logs the renderer URL or file it is loading, failed load events, renderer exits, renderer console messages, and the development window safety state.
+
+If you need to kill the app from PowerShell:
+
+```powershell
+Get-Process electron,PreFlight -ErrorAction SilentlyContinue | Stop-Process -Force
+```
+
+If the app behaves strangely after editing settings, reset local data with the `Remove-Item "$env:APPDATA\PreFlight" -Recurse -Force` command above.
 
 ## Windows Startup
 
