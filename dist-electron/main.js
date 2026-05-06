@@ -4,6 +4,7 @@ import path from 'node:path';
 import { getChecklistState, saveChecklistItems, setChecklistItemCompletion } from './store.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 let mainWindow = null;
+let locked = true;
 function createWindow() {
     Menu.setApplicationMenu(null);
     mainWindow = new BrowserWindow({
@@ -12,12 +13,38 @@ function createWindow() {
         minWidth: 900,
         minHeight: 620,
         title: 'PreFlight',
+        fullscreen: true,
+        frame: false,
+        alwaysOnTop: true,
+        autoHideMenuBar: true,
         backgroundColor: '#101418',
         show: false,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             contextIsolation: true,
             nodeIntegration: false
+        }
+    });
+    mainWindow.setAlwaysOnTop(true, 'screen-saver');
+    mainWindow.on('close', (event) => {
+        if (locked) {
+            event.preventDefault();
+            mainWindow?.show();
+            mainWindow?.focus();
+        }
+    });
+    mainWindow.on('blur', () => {
+        if (locked) {
+            setTimeout(() => {
+                mainWindow?.show();
+                mainWindow?.focus();
+            }, 100);
+        }
+    });
+    mainWindow.webContents.on('before-input-event', (event, input) => {
+        if (locked && input.alt && input.key.toLowerCase() === 'f4') {
+            event.preventDefault();
+            mainWindow?.focus();
         }
     });
     if (process.env.VITE_DEV_SERVER_URL) {
@@ -28,11 +55,13 @@ function createWindow() {
     }
     mainWindow.once('ready-to-show', () => {
         mainWindow?.show();
+        mainWindow?.setFullScreen(true);
         mainWindow?.focus();
     });
 }
 app.whenReady().then(createWindow);
 ipcMain.handle('preflight:unlock', () => {
+    locked = false;
     mainWindow?.hide();
     return true;
 });
