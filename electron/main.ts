@@ -199,7 +199,7 @@ function createTray() {
 
   // nativeImage keeps the tray icon portable across Windows, macOS, and Linux.
   tray = new Tray(getLogoImage());
-  tray.setToolTip('Checklist App');
+  tray.setToolTip('PreFlight');
   tray.setContextMenu(
     Menu.buildFromTemplate([
       {

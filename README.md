@@ -44,7 +44,7 @@ Both escape routes enter setup mode. Setup mode is a normal window with no block
 
 Use **Setup mode** or **Settings** to edit checklist items. Saving checklist changes stays in setup mode. Use **Lock now** when you want to return to the fullscreen overlay and secondary monitor blockers. Setup mode is not persisted; a fresh app launch starts in edit mode with Settings open, and PreFlight re-enters locked mode after a system resume event.
 
-PreFlight also adds a system tray icon using the app logo. Its tooltip is **Checklist App**, and its menu includes **Open Edit Mode**, **Lock Now**, and **Quit**.
+PreFlight also adds a system tray icon using the app logo. Its tooltip is **PreFlight**, and its menu includes **Open Edit Mode**, **Lock Now**, and **Quit**.
 
 Use debug mode when you want a safer troubleshooting window with DevTools and verbose renderer diagnostics:
 
