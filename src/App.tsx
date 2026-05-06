@@ -94,6 +94,8 @@ function App() {
 
   const completedCount = state.items.filter((item) => item.completed).length;
   const isComplete = completedCount === state.items.length;
+  const hasProgress = completedCount > 0;
+  const isLockedAndEmpty = modeState.mode === 'locked' && !hasProgress;
   const progressLabel = `${completedCount} / ${state.items.length} complete`;
   const modeEyebrow =
     modeState.mode === 'edit'
@@ -316,7 +318,7 @@ function App() {
             </div>
           </div>
 
-          <div className="scan-bar" aria-hidden="true">
+          <div className={`scan-bar ${isLockedAndEmpty ? 'is-idle' : ''}`} aria-hidden="true">
             <div className="scan-beam" />
           </div>
 
@@ -335,7 +337,10 @@ function App() {
             </span>
           </div>
 
-          <div className="progress-track" aria-hidden="true">
+          <div
+            className={`progress-track ${hasProgress ? 'has-progress' : ''}`}
+            aria-hidden="true"
+          >
             <div className="progress-fill" style={{ width: `${progressWidth}%` }} />
           </div>
 

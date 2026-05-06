@@ -175,12 +175,29 @@
   animation: scan-sweep 3.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
+.scan-bar.is-idle .scan-beam {
+  animation:
+    scan-sweep 3.5s cubic-bezier(0.4, 0, 0.6, 1) infinite,
+    scanPulse 4s ease-in-out infinite;
+}
+
 @keyframes scan-sweep {
   from {
     left: -120px;
   }
   to {
     left: calc(100% + 120px);
+  }
+}
+
+@keyframes scanPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.6;
   }
 }
 
@@ -263,6 +280,10 @@ h2 {
     rgba(120, 0, 0, 0.2);
 }
 
+.locked-mode .progress-track:not(.has-progress) {
+  animation: trackPulse 3s ease-in-out infinite;
+}
+
 .progress-fill {
   position: relative;
   height: 100%;
@@ -298,6 +319,17 @@ h2 {
 
 .progress-fill[style*="width: 0%"]::after {
   opacity: 0;
+}
+
+@keyframes trackPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 4px 1px rgba(180, 0, 0, 0.1);
+  }
+
+  50% {
+    box-shadow: 0 0 10px 3px rgba(180, 0, 0, 0.25);
+  }
 }
 
 .checklist {
