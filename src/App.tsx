@@ -112,55 +112,57 @@ function App() {
   return (
     <main className="app-shell">
       <section className="preflight-panel" aria-labelledby="preflight-title">
-        <div className="top-row">
-          <div>
-            <div className="eyebrow">MVP development mode</div>
-            <div className="shortcut-label">Ctrl+Shift+U unlocks during development</div>
+        <div className="dashboard-content">
+          <div className="top-row">
+            <div>
+              <div className="eyebrow">MVP development mode</div>
+              <div className="shortcut-label">Ctrl+Shift+U unlocks during development</div>
+            </div>
+            <button type="button" className="ghost-button" onClick={() => setShowSettings(true)}>
+              Settings
+            </button>
           </div>
-          <button type="button" className="ghost-button" onClick={() => setShowSettings(true)}>
-            Settings
-          </button>
-        </div>
 
-        <div className="scan-bar" aria-hidden="true">
-          <div className="scan-beam" />
-        </div>
+          <div className="scan-bar" aria-hidden="true">
+            <div className="scan-beam" />
+          </div>
 
-        <p className="app-name">PreFlight</p>
-        <h1 id="preflight-title">Before you start</h1>
-        <p className="lede">Complete your checklist to unlock your desktop.</p>
+          <p className="app-name">PreFlight</p>
+          <h1 id="preflight-title">Before you start</h1>
+          <p className="lede">Complete your checklist to unlock your desktop.</p>
 
-        <div className="progress-row">
-          <span>{progressLabel}</span>
-          <span>{isComplete ? 'Ready' : 'Locked'}</span>
-        </div>
+          <div className="progress-row">
+            <span>{progressLabel}</span>
+            <span>{isComplete ? 'Ready' : 'Locked'}</span>
+          </div>
 
-        <div className="progress-track" aria-hidden="true">
-          <div className="progress-fill" style={{ width: `${progressWidth}%` }} />
-        </div>
+          <div className="progress-track" aria-hidden="true">
+            <div className="progress-fill" style={{ width: `${progressWidth}%` }} />
+          </div>
 
-        <ul className="checklist">
-          {state.items.map((item) => (
-            <li key={item.id}>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={item.completed}
-                  onChange={() => toggleItem(item)}
-                />
-                <span>{item.text}</span>
-              </label>
-            </li>
-          ))}
-        </ul>
+          <ul className="checklist">
+            {state.items.map((item) => (
+              <li key={item.id}>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={item.completed}
+                    onChange={() => toggleItem(item)}
+                  />
+                  <span>{item.text}</span>
+                </label>
+              </li>
+            ))}
+          </ul>
 
-        <div className="actions">
-          <button type="button" disabled={!isComplete} onClick={unlock}>
-            Unlock desktop
-          </button>
-          <button type="button" className="dev-unlock" onClick={unlock}>
-            Dev Unlock
-          </button>
+          <div className="actions">
+            <button type="button" disabled={!isComplete} onClick={unlock}>
+              Unlock desktop
+            </button>
+            <button type="button" className="dev-unlock" onClick={unlock}>
+              Dev Unlock
+            </button>
+          </div>
         </div>
 
         {showSettings && (

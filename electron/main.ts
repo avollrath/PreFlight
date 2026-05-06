@@ -153,7 +153,19 @@ function logRendererLayoutState() {
         },
         panel: {
           width: document.querySelector('.preflight-panel')?.getBoundingClientRect().width,
-          height: document.querySelector('.preflight-panel')?.getBoundingClientRect().height
+          height: document.querySelector('.preflight-panel')?.getBoundingClientRect().height,
+          scrollWidth: document.querySelector('.preflight-panel')?.scrollWidth,
+          clientWidth: document.querySelector('.preflight-panel')?.clientWidth,
+          scrollHeight: document.querySelector('.preflight-panel')?.scrollHeight,
+          clientHeight: document.querySelector('.preflight-panel')?.clientHeight
+        },
+        dashboardContent: {
+          width: document.querySelector('.dashboard-content')?.getBoundingClientRect().width,
+          height: document.querySelector('.dashboard-content')?.getBoundingClientRect().height,
+          scrollWidth: document.querySelector('.dashboard-content')?.scrollWidth,
+          clientWidth: document.querySelector('.dashboard-content')?.clientWidth,
+          scrollHeight: document.querySelector('.dashboard-content')?.scrollHeight,
+          clientHeight: document.querySelector('.dashboard-content')?.clientHeight
         }
       })`
     )
