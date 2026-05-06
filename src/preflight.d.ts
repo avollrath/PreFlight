@@ -16,6 +16,7 @@ export type PreflightModeState = {
   locked: boolean;
   debug: boolean;
   overlay: boolean;
+  openSettings: boolean;
 };
 
 declare global {

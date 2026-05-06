@@ -37,10 +37,11 @@ let tray: TrayInstance | null = null;
 const blockerWindows = new Map<number, BrowserWindowInstance>();
 type AppMode = 'locked' | 'edit';
 
-let appMode: AppMode = isOverlayMode ? 'locked' : 'edit';
-let locked = appMode === 'locked' && isOverlayMode;
+let appMode: AppMode = 'edit';
+let locked = false;
 let isRecreatingMainWindow = false;
 let isQuitting = false;
+let openSettingsOnNextLoad = true;
 
 function log(message: string, extra?: unknown) {
   if (extra === undefined) {
@@ -198,7 +199,7 @@ function createTray() {
 
   // nativeImage keeps the tray icon portable across Windows, macOS, and Linux.
   tray = new Tray(getLogoImage());
-  tray.setToolTip('PreFlight');
+  tray.setToolTip('Checklist App');
   tray.setContextMenu(
     Menu.buildFromTemplate([
       {
@@ -286,7 +287,8 @@ function logRendererLayoutState() {
           clientWidth: document.querySelector('.dashboard-content')?.clientWidth,
           scrollHeight: document.querySelector('.dashboard-content')?.scrollHeight,
           clientHeight: document.querySelector('.dashboard-content')?.clientHeight
-        }
+        },
+        settingsOpen: Boolean(document.querySelector('.settings-panel'))
       })`
     )
     .then((layout) => log('Renderer layout state', layout))
@@ -346,11 +348,20 @@ function createWindow(mode: AppMode = appMode) {
   }
 
   mainWindow.on('close', (event: ElectronEvent) => {
-    if (locked && !isRecreatingMainWindow && !isQuitting) {
-      event.preventDefault();
+    if (isRecreatingMainWindow || isQuitting) {
+      return;
+    }
+
+    event.preventDefault();
+
+    if (locked) {
       mainWindow?.show();
       mainWindow?.focus();
+      return;
     }
+
+    mainWindow?.hide();
+    log('Main window hidden to tray');
   });
 
   mainWindow.on('blur', () => {
@@ -389,6 +400,7 @@ function createWindow(mode: AppMode = appMode) {
 
     if (isOverlayMode || isDebug) {
       logRendererLayoutState();
+      setTimeout(logRendererLayoutState, 500);
     }
   });
 
@@ -451,9 +463,10 @@ function recreateMainWindow(mode: AppMode) {
   isRecreatingMainWindow = false;
 }
 
-function enterEditMode(reason: string) {
+function enterEditMode(reason: string, openSettings = true) {
   appMode = 'edit';
   locked = false;
+  openSettingsOnNextLoad = openSettings;
   closeBlockerWindows();
   log(`Entering edit mode: ${reason}`);
 
@@ -471,6 +484,7 @@ function enterEditMode(reason: string) {
 function enterLockedMode(reason: string) {
   appMode = isOverlayMode ? 'locked' : 'edit';
   locked = appMode === 'locked' && isOverlayMode;
+  openSettingsOnNextLoad = false;
   log(`Entering ${appMode} mode: ${reason}`);
 
   if (!isOverlayMode) {
@@ -628,8 +642,15 @@ ipcMain.handle('preflight:get-mode', () => ({
   mode: appMode,
   locked,
   debug: isDebug,
-  overlay: isOverlayMode
+  overlay: isOverlayMode,
+  openSettings: consumeOpenSettingsOnNextLoad()
 }));
+
+function consumeOpenSettingsOnNextLoad() {
+  const shouldOpenSettings = openSettingsOnNextLoad;
+  openSettingsOnNextLoad = false;
+  return shouldOpenSettings;
+}
 
 ipcMain.handle('preflight:enter-edit-mode', () => {
   enterEditMode('renderer request');
@@ -637,7 +658,8 @@ ipcMain.handle('preflight:enter-edit-mode', () => {
     mode: appMode,
     locked,
     debug: isDebug,
-    overlay: isOverlayMode
+    overlay: isOverlayMode,
+    openSettings: true
   };
 });
 
@@ -647,7 +669,8 @@ ipcMain.handle('preflight:lock-now', () => {
     mode: appMode,
     locked,
     debug: isDebug,
-    overlay: isOverlayMode
+    overlay: isOverlayMode,
+    openSettings: false
   };
 });
 
@@ -693,13 +716,19 @@ app.on('render-process-gone', (_event, webContents, details) => {
 });
 
 app.on('activate', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.show();
+    mainWindow.focus();
+    return;
+  }
+
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow(appMode);
   }
 });
 
 app.on('window-all-closed', () => {
-  if (isRecreatingMainWindow) {
+  if (isRecreatingMainWindow || !isQuitting) {
     return;
   }
 

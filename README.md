@@ -1,12 +1,13 @@
 # PreFlight
 
-PreFlight is a Windows-first Electron productivity gate. It opens as a fullscreen checklist overlay and asks you to complete a small daily routine before continuing to your desktop.
+PreFlight is a Windows-first Electron productivity gate. It starts in a windowed setup mode for editing your checklist, then can switch into a fullscreen checklist overlay when you choose **Lock now** or when the machine resumes from sleep.
 
 This MVP is intentionally safe for development: the **Dev Unlock** button is always visible, and `Ctrl+Shift+U` exits the lock into setup mode.
 
 ## Features
 
-- Fullscreen, frameless, always-on-top checklist overlay
+- Windowed edit mode on startup with settings open
+- Fullscreen, frameless, always-on-top checklist overlay on demand or resume
 - Secondary monitor blocker overlays while locked
 - Dark 80s-inspired neon dashboard theme
 - Daily checklist completion state stored locally
@@ -32,7 +33,7 @@ npm install
 npm run dev
 ```
 
-`npm run dev` behaves like the real overlay. It opens fullscreen on the primary monitor, covers secondary monitors with blocker windows, stays always-on-top, uses frameless windows, blocks normal close while locked, and blocks `Alt+F4` while locked.
+`npm run dev` starts in edit mode with Settings open. Closing the main window with the `X` hides it to the system tray instead of quitting. Use **Lock now** from the app or tray when you want the real overlay: fullscreen on the primary monitor, secondary monitor blocker windows, always-on-top behavior, and blocked `Alt+F4` while locked.
 
 The development escape routes are always available:
 
@@ -41,9 +42,9 @@ The development escape routes are always available:
 
 Both escape routes enter setup mode. Setup mode is a normal window with no blocker overlays, no always-on-top lock, and normal window controls. The keyboard shortcut is handled in the Electron main process, so it still works if React fails to load.
 
-Use **Setup mode** or **Settings** to edit checklist items. Saving checklist changes stays in setup mode. Use **Lock now** when you want to return to the fullscreen overlay and secondary monitor blockers. Setup mode is not persisted; a fresh app launch starts locked again, and PreFlight re-enters locked mode after a system resume event.
+Use **Setup mode** or **Settings** to edit checklist items. Saving checklist changes stays in setup mode. Use **Lock now** when you want to return to the fullscreen overlay and secondary monitor blockers. Setup mode is not persisted; a fresh app launch starts in edit mode with Settings open, and PreFlight re-enters locked mode after a system resume event.
 
-PreFlight also adds a system tray icon using the app logo. Its menu includes **Open Edit Mode**, **Lock Now**, and **Quit**.
+PreFlight also adds a system tray icon using the app logo. Its tooltip is **Checklist App**, and its menu includes **Open Edit Mode**, **Lock Now**, and **Quit**.
 
 Use debug mode when you want a safer troubleshooting window with DevTools and verbose renderer diagnostics:
 

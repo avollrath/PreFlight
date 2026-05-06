@@ -35,10 +35,11 @@ function App() {
   const [draftItems, setDraftItems] = useState<DraftChecklistItem[]>(toDraftItems(fallbackItems));
   const [startupEnabled, setStartupEnabled] = useState(false);
   const [modeState, setModeState] = useState<PreflightModeState>({
-    mode: 'locked',
-    locked: true,
+    mode: 'edit',
+    locked: false,
     debug: false,
-    overlay: true
+    overlay: true,
+    openSettings: true
   });
 
   useEffect(() => {
@@ -46,7 +47,13 @@ function App() {
       setState(nextState);
       setDraftItems(toDraftItems(nextState.items));
     });
-    void window.preflight?.getMode().then(setModeState);
+    void window.preflight?.getMode().then((nextMode) => {
+      setModeState(nextMode);
+
+      if (nextMode.openSettings) {
+        setShowSettings(true);
+      }
+    });
     void window.preflight?.getStartupEnabled().then(setStartupEnabled);
   }, []);
 
@@ -90,7 +97,8 @@ function App() {
       setModeState((current) => ({
         ...current,
         mode: 'edit',
-        locked: false
+        locked: false,
+        openSettings: true
       }));
     });
   }
@@ -98,7 +106,10 @@ function App() {
   function enterSetupMode() {
     void window.preflight?.enterEditMode().then((nextMode) => {
       setModeState(nextMode);
-      setShowSettings(true);
+
+      if (nextMode.openSettings) {
+        setShowSettings(true);
+      }
     });
   }
 
