@@ -227,30 +227,77 @@ h2 {
   gap: 16px;
   margin-bottom: 10px;
   padding: 0 2px;
+  color: rgba(220, 60, 60, 0.9);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-shadow: 0 0 8px rgba(220, 40, 40, 0.5);
+}
+
+.progress-row span:last-child {
+  color: rgba(220, 60, 60, 0.9);
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-shadow: 0 0 8px rgba(220, 40, 40, 0.5);
 }
 
 .editing-badge {
-  color: rgba(217, 154, 168, 0.72);
+  color: rgba(255, 255, 255, 0.35);
   text-shadow: none;
 }
 
 .progress-track {
-  height: 12px;
+  position: relative;
+  height: 4px;
   margin-bottom: 22px;
-  overflow: hidden;
-  border: 1px solid var(--panel-border);
-  border-radius: 0;
-  background: #070103;
-  box-shadow: 0 0 18px rgba(255, 23, 68, 0.12) inset;
+  overflow: visible;
+  border: 1px solid rgba(180, 0, 0, 0.15);
+  border-radius: 2px;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent 18px,
+      rgba(0, 0, 0, 0.3) 18px,
+      rgba(0, 0, 0, 0.3) 19px
+    ),
+    rgba(120, 0, 0, 0.2);
 }
 
 .progress-fill {
+  position: relative;
   height: 100%;
-  background:
-    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.22) 0 8px, transparent 8px 14px),
-    linear-gradient(90deg, rgba(255, 23, 68, 0.72), var(--accent));
-  box-shadow: 0 0 18px var(--accent-soft);
-  transition: width 180ms ease;
+  border-radius: 2px;
+  background: linear-gradient(
+    90deg,
+    rgba(180, 20, 20, 0.8) 0%,
+    rgba(220, 40, 40, 0.95) 60%,
+    rgba(255, 80, 80, 1) 100%
+  );
+  box-shadow:
+    0 0 4px 1px rgba(255, 60, 60, 0.6),
+    0 0 12px 3px rgba(220, 20, 20, 0.4),
+    0 0 24px 6px rgba(180, 0, 0, 0.2);
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.progress-fill::after {
+  content: "";
+  position: absolute;
+  right: -1px;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255, 140, 140, 1);
+  box-shadow:
+    0 0 4px 2px rgba(255, 100, 100, 0.8),
+    0 0 12px 4px rgba(255, 60, 60, 0.5),
+    0 0 24px 8px rgba(220, 20, 20, 0.3);
+  transform: translateY(-50%);
+}
+
+.progress-fill[style*="width: 0%"]::after {
+  opacity: 0;
 }
 
 .checklist {
