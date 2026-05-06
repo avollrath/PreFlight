@@ -262,7 +262,11 @@ function App() {
 
           <p className="app-name">PreFlight</p>
           <h1 id="preflight-title">Before you start</h1>
-          <p className="lede">Complete your checklist to unlock your desktop.</p>
+          <p className="lede">
+            {modeState.mode === 'edit'
+              ? 'Check off every item below to unlock your desktop and get to work.'
+              : 'Complete every item to unlock your desktop.'}
+          </p>
 
           <div className="progress-row">
             <span>{progressLabel}</span>
