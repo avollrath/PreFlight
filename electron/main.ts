@@ -61,6 +61,7 @@ let locked = false;
 let isRecreatingMainWindow = false;
 let isQuitting = false;
 let openSettingsOnNextLoad = true;
+let lockedSessionStartedIncomplete = false;
 const registeredLockShortcuts = new Set<string>();
 
 function log(message: string, extra?: unknown) {
@@ -243,7 +244,12 @@ function isChecklistComplete(state = getChecklistState()) {
 }
 
 function maybeUnlockCompletedChecklist(reason: string, state = getChecklistState()) {
-  if (!locked || appMode !== 'locked' || !isChecklistComplete(state)) {
+  if (
+    !locked ||
+    appMode !== 'locked' ||
+    !lockedSessionStartedIncomplete ||
+    !isChecklistComplete(state)
+  ) {
     return false;
   }
 
@@ -586,6 +592,7 @@ function enterEditMode(reason: string, openSettings = true) {
   appMode = 'edit';
   locked = false;
   openSettingsOnNextLoad = openSettings;
+  lockedSessionStartedIncomplete = false;
   unregisterLockShortcutBlockers();
   closeBlockerWindows();
   log(`Entering edit mode: ${reason}`);
@@ -607,6 +614,7 @@ function unlockToTray(reason: string) {
   appMode = 'edit';
   locked = false;
   openSettingsOnNextLoad = false;
+  lockedSessionStartedIncomplete = false;
   unregisterLockShortcutBlockers();
   closeBlockerWindows();
 
@@ -622,10 +630,12 @@ function enterLockedMode(reason: string, options: OverlaySyncOptions = {}) {
   appMode = isOverlayMode ? 'locked' : 'edit';
   locked = appMode === 'locked' && isOverlayMode;
   openSettingsOnNextLoad = false;
+  lockedSessionStartedIncomplete = locked && !isChecklistComplete();
   log(`Entering ${appMode} mode: ${reason}`);
 
   if (!isOverlayMode) {
     unregisterLockShortcutBlockers();
+    lockedSessionStartedIncomplete = false;
     closeBlockerWindows();
     recreateMainWindow('edit');
     return;
@@ -648,6 +658,7 @@ function configureInitialMode() {
     appMode = isOverlayMode ? 'locked' : 'edit';
     locked = appMode === 'locked' && isOverlayMode;
     openSettingsOnNextLoad = false;
+    lockedSessionStartedIncomplete = locked && !isChecklistComplete();
     log(`Startup/wake lock is enabled; initial mode is ${appMode}`);
     return;
   }
@@ -655,6 +666,7 @@ function configureInitialMode() {
   appMode = 'edit';
   locked = false;
   openSettingsOnNextLoad = true;
+  lockedSessionStartedIncomplete = false;
   log('Startup/wake lock is disabled; initial mode is edit');
 }
 
@@ -940,9 +952,7 @@ ipcMain.handle('preflight:lock-now', () => {
 });
 
 ipcMain.handle('preflight:get-state', () => {
-  const state = getChecklistState();
-  maybeUnlockCompletedChecklist('completed checklist loaded', state);
-  return state;
+  return getChecklistState();
 });
 
 ipcMain.handle('preflight:set-completion', (_event, itemId: string, completed: boolean) => {
