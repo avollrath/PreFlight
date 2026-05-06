@@ -208,7 +208,7 @@ function reinforceLockedOverlay(reason: string) {
   mainWindow?.show();
   mainWindow?.setFullScreen(true);
   mainWindow?.setKiosk(true);
-  mainWindow?.setAlwaysOnTop(true, 'screen-saver');
+  mainWindow?.setAlwaysOnTop(true, 'screen-saver', 1);
   mainWindow?.focus();
 }
 
@@ -504,7 +504,7 @@ function createWindow(mode: AppMode = appMode) {
   if (shouldLockWindow) {
     window.setBounds(primaryDisplayBounds);
     window.setKiosk(true);
-    window.setAlwaysOnTop(true, 'screen-saver');
+    window.setAlwaysOnTop(true, 'screen-saver', 1);
   }
 
   window.on('close', (event: ElectronEvent) => {
@@ -527,9 +527,10 @@ function createWindow(mode: AppMode = appMode) {
   window.on('blur', () => {
     if (locked) {
       setTimeout(() => {
-        mainWindow?.show();
-        mainWindow?.focus();
-      }, 100);
+        if (!window.isDestroyed()) {
+          window.focus();
+        }
+      }, 50);
     }
   });
 
@@ -595,7 +596,7 @@ function createWindow(mode: AppMode = appMode) {
       window.setBounds(primaryDisplayBounds);
       window.setFullScreen(true);
       window.setKiosk(true);
-      window.setAlwaysOnTop(true, 'screen-saver');
+      window.setAlwaysOnTop(true, 'screen-saver', 1);
       syncOverlayWindows();
     }
 
@@ -737,13 +738,14 @@ function createBlockerWindow(display: Display) {
     alwaysOnTop: true,
     autoHideMenuBar: true,
     skipTaskbar: true,
-    backgroundColor: '#050104',
+    backgroundColor: '#000000',
     show: false,
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false
     }
   });
+  blocker.setAlwaysOnTop(true, 'screen-saver', 1);
 
   // Position before loading so the first paint happens on the intended monitor.
   forceBlockerVisible(blocker, display, { shouldShow: false });
@@ -760,6 +762,14 @@ function createBlockerWindow(display: Display) {
       blocker.show();
       blocker.focus();
     }
+  });
+
+  blocker.on('blur', () => {
+    setTimeout(() => {
+      if (!blocker.isDestroyed()) {
+        blocker.focus();
+      }
+    }, 50);
   });
 
   blocker.webContents.on('before-input-event', (event: ElectronEvent, input: Input) => {
@@ -815,7 +825,7 @@ function forceBlockerVisible(
   blocker.setFullScreen(true);
   blocker.setKiosk(true);
   blocker.setBounds(display.bounds);
-  blocker.setAlwaysOnTop(true, 'screen-saver');
+  blocker.setAlwaysOnTop(true, 'screen-saver', 1);
   blocker.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
 
   if (shouldShow) {
@@ -846,9 +856,9 @@ function syncOverlayWindows(options: OverlaySyncOptions = {}) {
   const displays = screen.getAllDisplays();
   const activeDisplayIds = new Set(displays.map((display) => display.id));
 
-  mainWindow?.setBounds(primaryDisplay.bounds);
-  mainWindow?.setFullScreen(true);
-  mainWindow?.setAlwaysOnTop(true, 'screen-saver');
+    mainWindow?.setBounds(primaryDisplay.bounds);
+    mainWindow?.setFullScreen(true);
+  mainWindow?.setAlwaysOnTop(true, 'screen-saver', 1);
 
   if (options.recreateBlockers) {
     closeBlockerWindows();
