@@ -15,6 +15,7 @@ import {
   setChecklistItemCompletion
 } from './store.js';
 import {
+  enforceMonitorBounds,
   enforcePrimaryMonitorBounds,
   killExplorer,
   registerBlockedShortcuts,
@@ -740,6 +741,7 @@ function createBlockerWindow(display: Display) {
     }
   });
   blocker.setAlwaysOnTop(true, 'screen-saver', 1);
+  enforceMonitorBounds(blocker, display);
 
   // Position before loading so the first paint happens on the intended monitor.
   forceBlockerVisible(blocker, display, { shouldShow: false });

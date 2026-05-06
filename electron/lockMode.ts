@@ -1,5 +1,6 @@
 import type {
   BrowserWindow as BrowserWindowInstance,
+  Display,
   GlobalShortcut,
   Screen
 } from 'electron';
@@ -85,6 +86,35 @@ export function enforcePrimaryMonitorBounds(win: BrowserWindowInstance, screen: 
     }
 
     const bounds = screen.getPrimaryDisplay().bounds;
+    const currentBounds = win.getBounds();
+
+    if (
+      currentBounds.x === bounds.x &&
+      currentBounds.y === bounds.y &&
+      currentBounds.width === bounds.width &&
+      currentBounds.height === bounds.height
+    ) {
+      return;
+    }
+
+    win.setPosition(bounds.x, bounds.y);
+    win.setSize(bounds.width, bounds.height);
+  };
+
+  win.on('move', enforceBounds);
+}
+
+/**
+ * Keeps a blocker window pinned to the explicit display bounds assigned when it
+ * was created.
+ */
+export function enforceMonitorBounds(win: BrowserWindowInstance, display: Display) {
+  const enforceBounds = () => {
+    if (win.isDestroyed()) {
+      return;
+    }
+
+    const { bounds } = display;
     const currentBounds = win.getBounds();
 
     if (
