@@ -1,13 +1,13 @@
 # PreFlight
 
-PreFlight is a Windows-first Electron productivity gate. It starts in a windowed setup mode for editing your checklist, then can switch into a fullscreen checklist overlay when you choose **Lock now** or when the machine resumes from sleep.
+PreFlight is a Windows-first Electron productivity gate. It starts in a windowed setup mode for editing your checklist, then can switch into a fullscreen checklist overlay when you choose **Lock now** or when startup/wake locking is enabled.
 
 This MVP is intentionally safe for development: the **Dev Unlock** button is always visible, and `Ctrl+Shift+U` exits the lock into setup mode.
 
 ## Features
 
-- Windowed edit mode on startup with settings open
-- Fullscreen, frameless, always-on-top checklist overlay on demand or resume
+- Windowed edit mode on startup with settings open unless startup/wake locking is enabled
+- Fullscreen, frameless, always-on-top checklist overlay on demand, startup, or resume
 - Secondary monitor blocker overlays while locked
 - Dark 80s-inspired neon dashboard theme
 - Daily checklist completion state stored locally
@@ -42,7 +42,7 @@ The development escape routes are always available:
 
 Both escape routes enter setup mode. Setup mode is a normal window with no blocker overlays, no always-on-top lock, and normal window controls. The keyboard shortcut is handled in the Electron main process, so it still works if React fails to load.
 
-Use **Setup mode** or **Settings** to edit checklist items. Saving checklist changes stays in setup mode. Use **Lock now** when you want to return to the fullscreen overlay and secondary monitor blockers. Setup mode is not persisted; a fresh app launch starts in edit mode with Settings open, and PreFlight re-enters locked mode after a system resume event.
+Use **Setup mode** or **Settings** to edit checklist items. Saving checklist changes stays in setup mode. Use **Lock now** when you want to return to the fullscreen overlay and secondary monitor blockers. Setup mode is not persisted; a fresh app launch starts in edit mode with Settings open unless **Start PreFlight when Windows starts/wakes up** is enabled.
 
 PreFlight also adds a system tray icon using the app logo. Its tooltip is **PreFlight**, and its menu includes **Open Edit Mode**, **Lock Now**, and **Quit**.
 
@@ -131,9 +131,9 @@ If the app behaves strangely after editing settings, reset local data with the `
 
 ## Windows Startup
 
-Open **Settings** in PreFlight and enable **Start PreFlight when Windows starts**.
+Open **Settings** in PreFlight and enable **Start PreFlight when Windows starts/wakes up**.
 
-The toggle uses Electron's login item support for the current Windows user. In development it points at the current Electron process; in packaged builds it points at `PreFlight.exe`.
+The toggle is stored in PreFlight's local JSON data and uses Electron's login item support for the current OS user. When enabled, PreFlight starts in locked fullscreen mode on app launch and re-enters locked mode after `powerMonitor.resume`. Development mode no longer ignores this setting, although Windows login startup is most reliable from a packaged `PreFlight.exe`.
 
 ## Workstation Unlock Task
 

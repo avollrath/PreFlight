@@ -3,12 +3,15 @@ import type {
   Display,
   Event as ElectronEvent,
   Input,
+  Settings as LoginItemSettingsOptions,
   Tray as TrayInstance
 } from 'electron';
 import path from 'node:path';
 import {
   getChecklistState,
+  getStartOnStartupWakeEnabled,
   saveChecklistItems,
+  setStartOnStartupWakeEnabled,
   setChecklistItemCompletion
 } from './store.js';
 
@@ -217,6 +220,30 @@ function createTray() {
       }
     ])
   );
+}
+
+function applyLoginItemSetting(enabled: boolean) {
+  const loginItemOptions: LoginItemSettingsOptions = {
+    openAtLogin: enabled
+  };
+
+  if (process.platform === 'win32') {
+    loginItemOptions.path = process.execPath;
+
+    if (isDev) {
+      loginItemOptions.args = [app.getAppPath()];
+
+      if (enabled) {
+        log('Development startup registration requested. Windows may launch Electron without the Vite dev server.');
+      }
+    }
+  }
+
+  try {
+    app.setLoginItemSettings(loginItemOptions);
+  } catch (error) {
+    log('Unable to update login item settings', error);
+  }
 }
 
 function logWindowSafetyState() {
@@ -497,6 +524,23 @@ function enterLockedMode(reason: string) {
   syncOverlayWindows();
 }
 
+function configureInitialMode() {
+  const shouldLockOnStart = getStartOnStartupWakeEnabled();
+
+  if (shouldLockOnStart) {
+    appMode = isOverlayMode ? 'locked' : 'edit';
+    locked = appMode === 'locked' && isOverlayMode;
+    openSettingsOnNextLoad = false;
+    log(`Startup/wake lock is enabled; initial mode is ${appMode}`);
+    return;
+  }
+
+  appMode = 'edit';
+  locked = false;
+  openSettingsOnNextLoad = true;
+  log('Startup/wake lock is disabled; initial mode is edit');
+}
+
 function createBlockerWindow(display: Display) {
   const blocker = new BrowserWindow({
     x: display.bounds.x,
@@ -616,6 +660,8 @@ function registerDisplayHandlers() {
 }
 
 app.whenReady().then(() => {
+  configureInitialMode();
+  applyLoginItemSetting(getStartOnStartupWakeEnabled());
   log(
     `Starting app. isPackaged=${app.isPackaged} isDev=${isDev} isDebug=${isDebug} isOverlayMode=${isOverlayMode} appMode=${appMode}`
   );
@@ -625,7 +671,12 @@ app.whenReady().then(() => {
   createWindow(appMode);
 
   powerMonitor.on('resume', () => {
-    enterLockedMode('power resume');
+    if (getStartOnStartupWakeEnabled()) {
+      enterLockedMode('power resume');
+      return;
+    }
+
+    log('Power resume detected; startup/wake lock is disabled');
   });
 
   if (isOverlayMode) {
@@ -683,25 +734,17 @@ ipcMain.handle('preflight:set-completion', (_event, itemId: string, completed: b
 ipcMain.handle('preflight:save-items', (_event, texts: string[]) => saveChecklistItems(texts));
 
 ipcMain.handle('preflight:get-startup-enabled', () => {
-  if (isDev) {
-    return false;
-  }
-
-  return app.getLoginItemSettings().openAtLogin;
+  return getStartOnStartupWakeEnabled();
 });
 
 ipcMain.handle('preflight:set-startup-enabled', (_event, enabled: boolean) => {
   if (isDev) {
-    log('Ignoring startup setting change in safe development mode');
-    return false;
+    log('Startup/wake setting changed in development mode for testing');
   }
 
-  app.setLoginItemSettings({
-    openAtLogin: enabled,
-    path: process.execPath
-  });
-
-  return app.getLoginItemSettings().openAtLogin;
+  const saved = setStartOnStartupWakeEnabled(enabled);
+  applyLoginItemSetting(saved);
+  return saved;
 });
 
 app.on('will-quit', () => {

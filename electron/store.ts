@@ -17,6 +17,9 @@ export type ChecklistState = {
 type StoreData = {
   items: ChecklistItem[];
   completionsByDate: Record<string, string[]>;
+  settings: {
+    startOnStartupWake: boolean;
+  };
 };
 
 const defaultItems = [
@@ -38,7 +41,10 @@ function todayKey() {
 function createDefaultStore(): StoreData {
   return {
     items: defaultItems.map((text) => ({ id: randomUUID(), text })),
-    completionsByDate: {}
+    completionsByDate: {},
+    settings: {
+      startOnStartupWake: false
+    }
   };
 }
 
@@ -53,7 +59,10 @@ function readStore(): StoreData {
 
     return {
       items: parsed.items,
-      completionsByDate: parsed.completionsByDate ?? {}
+      completionsByDate: parsed.completionsByDate ?? {},
+      settings: {
+        startOnStartupWake: parsed.settings?.startOnStartupWake ?? false
+      }
     };
   } catch {
     return createDefaultStore();
@@ -109,9 +118,21 @@ export function saveChecklistItems(texts: string[]) {
 
   const data: StoreData = {
     items: items.length > 0 ? items : createDefaultStore().items,
-    completionsByDate: existing.completionsByDate
+    completionsByDate: existing.completionsByDate,
+    settings: existing.settings
   };
 
   writeStore(data);
   return getChecklistState();
+}
+
+export function getStartOnStartupWakeEnabled() {
+  return readStore().settings.startOnStartupWake;
+}
+
+export function setStartOnStartupWakeEnabled(enabled: boolean) {
+  const data = readStore();
+  data.settings.startOnStartupWake = enabled;
+  writeStore(data);
+  return data.settings.startOnStartupWake;
 }

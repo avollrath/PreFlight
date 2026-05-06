@@ -169,14 +169,17 @@ function App() {
             </button>
           </header>
 
-          {/* Options: startup behavior stays editable from the full-window settings view. */}
-          <label className="startup-toggle">
+          {/* Options: startup/wake lock is persisted locally and can be tested in dev. */}
+          <label
+            className="startup-toggle"
+            title="When enabled, PreFlight will automatically lock your screen on system start or wake."
+          >
             <input
               type="checkbox"
               checked={startupEnabled}
               onChange={(event) => toggleStartup(event.target.checked)}
             />
-            <span>Start PreFlight when Windows starts</span>
+            <span>Start PreFlight when Windows starts/wakes up</span>
           </label>
 
           {/* Checklist editor: stable item IDs keep input focus steady while typing. */}
