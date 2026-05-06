@@ -877,9 +877,15 @@ function syncOverlayWindows(options: OverlaySyncOptions = {}) {
   const displays = screen.getAllDisplays();
   const activeDisplayIds = new Set(displays.map((display) => display.id));
 
-    mainWindow?.setBounds(primaryDisplay.bounds);
-    mainWindow?.setFullScreen(true);
+  mainWindow?.setBounds(primaryDisplay.bounds);
+  mainWindow?.setFullScreen(true);
   mainWindow?.setAlwaysOnTop(true, 'screen-saver', 1);
+
+  if (!getBlockSecondaryScreensEnabled()) {
+    closeBlockerWindows();
+    mainWindow?.focus();
+    return;
+  }
 
   if (options.recreateBlockers) {
     closeBlockerWindows();
