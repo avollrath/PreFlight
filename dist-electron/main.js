@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu } from 'electron';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -31,6 +31,10 @@ function createWindow() {
     });
 }
 app.whenReady().then(createWindow);
+ipcMain.handle('preflight:unlock', () => {
+    mainWindow?.hide();
+    return true;
+});
 app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
         createWindow();
