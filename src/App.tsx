@@ -236,7 +236,7 @@ function App() {
               </div>
               <div className="shortcut-label">
                 {modeState.mode === 'edit'
-                  ? 'Windowed editing is active. Lock now returns to the overlay.'
+                  ? "Edit your checklist below, then click Lock Now when you're ready to start."
                   : 'Complete every checklist item to unlock. Dev shortcuts are disabled.'}
               </div>
             </div>
