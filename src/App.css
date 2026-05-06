@@ -96,6 +96,12 @@
   gap: 16px;
 }
 
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .eyebrow,
 .progress-row,
 .settings-kicker {
@@ -425,6 +431,7 @@ button:focus-visible,
   }
 
   .top-row,
+  .top-actions,
   .actions,
   .settings-header,
   .settings-actions {

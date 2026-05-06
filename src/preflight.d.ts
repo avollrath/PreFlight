@@ -11,11 +11,21 @@ export type ChecklistState = {
   items: ChecklistItem[];
 };
 
+export type PreflightModeState = {
+  mode: 'locked' | 'edit';
+  locked: boolean;
+  debug: boolean;
+  overlay: boolean;
+};
+
 declare global {
   interface Window {
     preflight?: {
       platform: NodeJS.Platform;
       unlock: () => Promise<boolean>;
+      getMode: () => Promise<PreflightModeState>;
+      enterEditMode: () => Promise<PreflightModeState>;
+      lockNow: () => Promise<PreflightModeState>;
       getState: () => Promise<ChecklistState>;
       setCompletion: (itemId: string, completed: boolean) => Promise<ChecklistState>;
       saveItems: (texts: string[]) => Promise<ChecklistState>;

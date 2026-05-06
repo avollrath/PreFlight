@@ -2,7 +2,7 @@
 
 PreFlight is a Windows-first Electron productivity gate. It opens as a fullscreen checklist overlay and asks you to complete a small daily routine before continuing to your desktop.
 
-This MVP is intentionally safe for development: the **Dev Unlock** button is always visible, and `Ctrl+Shift+U` unlocks immediately.
+This MVP is intentionally safe for development: the **Dev Unlock** button is always visible, and `Ctrl+Shift+U` exits the lock into setup mode.
 
 ## Features
 
@@ -11,6 +11,7 @@ This MVP is intentionally safe for development: the **Dev Unlock** button is alw
 - Dark 80s-inspired neon dashboard theme
 - Daily checklist completion state stored locally
 - Editable checklist items in the settings panel
+- Windowed setup mode for editing without monitor blockers
 - Unlock button enabled only when every item is complete
 - Always-available Dev Unlock button
 - `Ctrl+Shift+U` development unlock shortcut
@@ -37,7 +38,9 @@ The development escape routes are always available:
 - Click **Dev Unlock**
 - Press `Ctrl+Shift+U`
 
-The keyboard shortcut is handled in the Electron main process, so it still works if React fails to load.
+Both escape routes enter setup mode. Setup mode is a normal window with no blocker overlays, no always-on-top lock, and normal window controls. The keyboard shortcut is handled in the Electron main process, so it still works if React fails to load.
+
+Use **Setup mode** or **Settings** to edit checklist items. Saving checklist changes stays in setup mode. Use **Lock now** when you want to return to the fullscreen overlay and secondary monitor blockers. Setup mode is not persisted; a fresh app launch starts locked again, and PreFlight re-enters locked mode after a system resume event.
 
 Use debug mode when you want a safer troubleshooting window with DevTools and verbose renderer diagnostics:
 
@@ -98,7 +101,7 @@ Remove-Item "$env:APPDATA\PreFlight" -Recurse -Force
 
 ## Diagnostics
 
-If PreFlight opens black in development, press `Ctrl+Shift+U` first. It should quit immediately even if the renderer is broken.
+If PreFlight opens black in development, press `Ctrl+Shift+U` first. It should leave the locked overlay and open setup mode even if the renderer is broken.
 
 Launch debug mode:
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { ChecklistItem, ChecklistState } from './preflight';
+import type { ChecklistItem, ChecklistState, PreflightModeState } from './preflight';
 import './App.css';
 
 const fallbackItems: ChecklistItem[] = [
@@ -34,12 +34,19 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [draftItems, setDraftItems] = useState<DraftChecklistItem[]>(toDraftItems(fallbackItems));
   const [startupEnabled, setStartupEnabled] = useState(false);
+  const [modeState, setModeState] = useState<PreflightModeState>({
+    mode: 'locked',
+    locked: true,
+    debug: false,
+    overlay: true
+  });
 
   useEffect(() => {
     void window.preflight?.getState().then((nextState) => {
       setState(nextState);
       setDraftItems(toDraftItems(nextState.items));
     });
+    void window.preflight?.getMode().then(setModeState);
     void window.preflight?.getStartupEnabled().then(setStartupEnabled);
   }, []);
 
@@ -79,7 +86,34 @@ function App() {
   }
 
   function unlock() {
-    void window.preflight?.unlock();
+    void window.preflight?.unlock().then(() => {
+      setModeState((current) => ({
+        ...current,
+        mode: 'edit',
+        locked: false
+      }));
+    });
+  }
+
+  function enterSetupMode() {
+    void window.preflight?.enterEditMode().then((nextMode) => {
+      setModeState(nextMode);
+      setShowSettings(true);
+    });
+  }
+
+  function lockNow() {
+    setShowSettings(false);
+    void window.preflight?.lockNow().then(setModeState);
+  }
+
+  function openSettings() {
+    if (modeState.mode === 'locked') {
+      enterSetupMode();
+      return;
+    }
+
+    setShowSettings(true);
   }
 
   function updateDraftItem(itemId: string, value: string) {
@@ -115,12 +149,29 @@ function App() {
         <div className="dashboard-content">
           <div className="top-row">
             <div>
-              <div className="eyebrow">MVP development mode</div>
-              <div className="shortcut-label">Ctrl+Shift+U unlocks during development</div>
+              <div className="eyebrow">
+                {modeState.mode === 'edit' ? 'Setup mode' : 'MVP development mode'}
+              </div>
+              <div className="shortcut-label">
+                {modeState.mode === 'edit'
+                  ? 'Windowed editing is active. Lock now returns to the overlay.'
+                  : 'Ctrl+Shift+U unlocks to setup mode during development'}
+              </div>
             </div>
-            <button type="button" className="ghost-button" onClick={() => setShowSettings(true)}>
-              Settings
-            </button>
+            <div className="top-actions">
+              {modeState.mode === 'edit' ? (
+                <button type="button" className="ghost-button" onClick={lockNow}>
+                  Lock now
+                </button>
+              ) : (
+                <button type="button" className="ghost-button" onClick={enterSetupMode}>
+                  Setup mode
+                </button>
+              )}
+              <button type="button" className="ghost-button" onClick={openSettings}>
+                Settings
+              </button>
+            </div>
           </div>
 
           <div className="scan-bar" aria-hidden="true">

@@ -3,6 +3,9 @@ const { contextBridge, ipcRenderer } = require('electron') as typeof import('ele
 contextBridge.exposeInMainWorld('preflight', {
   platform: process.platform,
   unlock: () => ipcRenderer.invoke('preflight:unlock'),
+  getMode: () => ipcRenderer.invoke('preflight:get-mode'),
+  enterEditMode: () => ipcRenderer.invoke('preflight:enter-edit-mode'),
+  lockNow: () => ipcRenderer.invoke('preflight:lock-now'),
   getState: () => ipcRenderer.invoke('preflight:get-state'),
   setCompletion: (itemId: string, completed: boolean) =>
     ipcRenderer.invoke('preflight:set-completion', itemId, completed),

@@ -17,6 +17,7 @@ const {
   globalShortcut,
   ipcMain,
   Menu,
+  powerMonitor,
   screen
 } = require('electron') as typeof import('electron');
 
@@ -30,7 +31,11 @@ const isOverlayMode = !isDebug && (!isDev || process.env.PREFLIGHT_DEV_LOCKED ==
 
 let mainWindow: BrowserWindowInstance | null = null;
 const blockerWindows = new Map<number, BrowserWindowInstance>();
-let locked = isOverlayMode;
+type AppMode = 'locked' | 'edit';
+
+let appMode: AppMode = isOverlayMode ? 'locked' : 'edit';
+let locked = appMode === 'locked' && isOverlayMode;
+let isRecreatingMainWindow = false;
 
 function log(message: string, extra?: unknown) {
   if (extra === undefined) {
@@ -144,15 +149,7 @@ function blockerHtml() {
 
 function emergencyUnlock() {
   log('Emergency unlock requested');
-  locked = false;
-  closeBlockerWindows();
-
-  if (isDev) {
-    app.quit();
-    return;
-  }
-
-  mainWindow?.hide();
+  enterEditMode('emergency unlock');
 }
 
 function closeBlockerWindows() {
@@ -174,6 +171,7 @@ function logWindowSafetyState() {
     alwaysOnTop: mainWindow.isAlwaysOnTop(),
     closable: mainWindow.isClosable(),
     resizable: mainWindow.isResizable(),
+    appMode,
     locked
   });
 
@@ -237,25 +235,45 @@ function logRendererLayoutState() {
     .catch((error) => log('Renderer layout state unavailable', error));
 }
 
-function createWindow() {
+function loadRenderer(window: BrowserWindowInstance) {
+  const rendererTarget = process.env.VITE_DEV_SERVER_URL
+    ? process.env.VITE_DEV_SERVER_URL
+    : path.join(__dirname, '../dist/index.html');
+
+  log(
+    process.env.VITE_DEV_SERVER_URL
+      ? `Loading renderer URL: ${rendererTarget}`
+      : `Loading renderer file: ${rendererTarget}`
+  );
+
+  if (process.env.VITE_DEV_SERVER_URL) {
+    void window.loadURL(process.env.VITE_DEV_SERVER_URL);
+    return;
+  }
+
+  void window.loadFile(rendererTarget);
+}
+
+function createWindow(mode: AppMode = appMode) {
   Menu.setApplicationMenu(null);
   const primaryDisplayBounds = screen.getPrimaryDisplay().bounds;
+  const shouldLockWindow = mode === 'locked' && isOverlayMode;
 
   mainWindow = new BrowserWindow({
-    x: isOverlayMode ? primaryDisplayBounds.x : undefined,
-    y: isOverlayMode ? primaryDisplayBounds.y : undefined,
-    width: isOverlayMode ? primaryDisplayBounds.width : 1800,
-    height: isOverlayMode ? primaryDisplayBounds.height : 1000,
+    x: shouldLockWindow ? primaryDisplayBounds.x : undefined,
+    y: shouldLockWindow ? primaryDisplayBounds.y : undefined,
+    width: shouldLockWindow ? primaryDisplayBounds.width : 1800,
+    height: shouldLockWindow ? primaryDisplayBounds.height : 1000,
     minWidth: 900,
     minHeight: 620,
     title: 'PreFlight',
-    fullscreen: isOverlayMode,
-    frame: !isOverlayMode,
-    resizable: !isOverlayMode,
-    alwaysOnTop: isOverlayMode,
+    fullscreen: shouldLockWindow,
+    frame: !shouldLockWindow,
+    resizable: !shouldLockWindow,
+    alwaysOnTop: shouldLockWindow,
     autoHideMenuBar: true,
     backgroundColor: '#101418',
-    show: !isOverlayMode,
+    show: !shouldLockWindow,
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
@@ -263,13 +281,13 @@ function createWindow() {
     }
   });
 
-  if (isOverlayMode) {
+  if (shouldLockWindow) {
     mainWindow.setBounds(primaryDisplayBounds);
     mainWindow.setAlwaysOnTop(true, 'screen-saver');
   }
 
   mainWindow.on('close', (event: ElectronEvent) => {
-    if (locked) {
+    if (locked && !isRecreatingMainWindow) {
       event.preventDefault();
       mainWindow?.show();
       mainWindow?.focus();
@@ -327,23 +345,9 @@ function createWindow() {
     debugLog(`Renderer console [${level}] ${sourceId}:${line} ${message}`);
   });
 
-  const rendererTarget = process.env.VITE_DEV_SERVER_URL
-    ? process.env.VITE_DEV_SERVER_URL
-    : path.join(__dirname, '../dist/index.html');
+  loadRenderer(mainWindow);
 
-  log(
-    process.env.VITE_DEV_SERVER_URL
-      ? `Loading renderer URL: ${rendererTarget}`
-      : `Loading renderer file: ${rendererTarget}`
-  );
-
-  if (process.env.VITE_DEV_SERVER_URL) {
-    void mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
-  } else {
-    void mainWindow.loadFile(rendererTarget);
-  }
-
-  if (!isOverlayMode) {
+  if (!shouldLockWindow) {
     mainWindow.show();
     mainWindow.focus();
 
@@ -356,7 +360,7 @@ function createWindow() {
   mainWindow.once('ready-to-show', () => {
     mainWindow?.show();
 
-    if (isOverlayMode) {
+    if (shouldLockWindow) {
       mainWindow?.setBounds(primaryDisplayBounds);
       mainWindow?.setFullScreen(true);
       mainWindow?.setAlwaysOnTop(true, 'screen-saver');
@@ -365,7 +369,7 @@ function createWindow() {
 
     mainWindow?.focus();
 
-    if (isDebug || isOverlayMode) {
+    if (isDebug || shouldLockWindow) {
       logWindowSafetyState();
     }
 
@@ -373,6 +377,51 @@ function createWindow() {
       mainWindow?.webContents.openDevTools({ mode: 'detach' });
     }
   });
+}
+
+function recreateMainWindow(mode: AppMode) {
+  isRecreatingMainWindow = true;
+
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.removeAllListeners('close');
+    mainWindow.destroy();
+  }
+
+  mainWindow = null;
+  createWindow(mode);
+  isRecreatingMainWindow = false;
+}
+
+function enterEditMode(reason: string) {
+  appMode = 'edit';
+  locked = false;
+  closeBlockerWindows();
+  log(`Entering edit mode: ${reason}`);
+
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    if (mainWindow.isFullScreen()) {
+      mainWindow.setFullScreen(false);
+    }
+
+    mainWindow.setAlwaysOnTop(false);
+  }
+
+  recreateMainWindow('edit');
+}
+
+function enterLockedMode(reason: string) {
+  appMode = isOverlayMode ? 'locked' : 'edit';
+  locked = appMode === 'locked' && isOverlayMode;
+  log(`Entering ${appMode} mode: ${reason}`);
+
+  if (!isOverlayMode) {
+    closeBlockerWindows();
+    recreateMainWindow('edit');
+    return;
+  }
+
+  recreateMainWindow('locked');
+  syncOverlayWindows();
 }
 
 function createBlockerWindow(display: Display) {
@@ -438,7 +487,7 @@ function createBlockerWindow(display: Display) {
 }
 
 function syncOverlayWindows() {
-  if (!isOverlayMode || !locked) {
+  if (!isOverlayMode || appMode !== 'locked' || !locked) {
     return;
   }
 
@@ -495,11 +544,15 @@ function registerDisplayHandlers() {
 
 app.whenReady().then(() => {
   log(
-    `Starting app. isPackaged=${app.isPackaged} isDev=${isDev} isDebug=${isDebug} isOverlayMode=${isOverlayMode}`
+    `Starting app. isPackaged=${app.isPackaged} isDev=${isDev} isDebug=${isDebug} isOverlayMode=${isOverlayMode} appMode=${appMode}`
   );
   globalShortcut.register('CommandOrControl+Shift+U', emergencyUnlock);
   registerDisplayHandlers();
-  createWindow();
+  createWindow(appMode);
+
+  powerMonitor.on('resume', () => {
+    enterLockedMode('power resume');
+  });
 
   if (isOverlayMode) {
     syncOverlayWindows();
@@ -509,6 +562,33 @@ app.whenReady().then(() => {
 ipcMain.handle('preflight:unlock', () => {
   emergencyUnlock();
   return true;
+});
+
+ipcMain.handle('preflight:get-mode', () => ({
+  mode: appMode,
+  locked,
+  debug: isDebug,
+  overlay: isOverlayMode
+}));
+
+ipcMain.handle('preflight:enter-edit-mode', () => {
+  enterEditMode('renderer request');
+  return {
+    mode: appMode,
+    locked,
+    debug: isDebug,
+    overlay: isOverlayMode
+  };
+});
+
+ipcMain.handle('preflight:lock-now', () => {
+  enterLockedMode('renderer request');
+  return {
+    mode: appMode,
+    locked,
+    debug: isDebug,
+    overlay: isOverlayMode
+  };
 });
 
 ipcMain.handle('preflight:get-state', () => getChecklistState());
@@ -552,11 +632,15 @@ app.on('render-process-gone', (_event, webContents, details) => {
 
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
+    createWindow(appMode);
   }
 });
 
 app.on('window-all-closed', () => {
+  if (isRecreatingMainWindow) {
+    return;
+  }
+
   if (process.platform !== 'darwin') {
     app.quit();
   }
