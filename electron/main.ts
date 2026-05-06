@@ -158,12 +158,14 @@ function blockerHtml() {
 
 function emergencyUnlock() {
   log('Emergency unlock requested');
-  enterEditMode('emergency unlock');
+  unlockToTray('emergency unlock');
 }
 
 function closeBlockerWindows() {
   for (const blocker of blockerWindows.values()) {
-    blocker.destroy();
+    if (!blocker.isDestroyed()) {
+      blocker.destroy();
+    }
   }
 
   blockerWindows.clear();
@@ -346,7 +348,7 @@ function createWindow(mode: AppMode = appMode) {
   const primaryDisplayBounds = screen.getPrimaryDisplay().bounds;
   const shouldLockWindow = mode === 'locked' && isOverlayMode;
 
-  mainWindow = new BrowserWindow({
+  const window = new BrowserWindow({
     x: shouldLockWindow ? primaryDisplayBounds.x : undefined,
     y: shouldLockWindow ? primaryDisplayBounds.y : undefined,
     width: shouldLockWindow ? primaryDisplayBounds.width : 1800,
@@ -368,13 +370,20 @@ function createWindow(mode: AppMode = appMode) {
       nodeIntegration: false
     }
   });
+  mainWindow = window;
+
+  window.on('closed', () => {
+    if (mainWindow === window) {
+      mainWindow = null;
+    }
+  });
 
   if (shouldLockWindow) {
-    mainWindow.setBounds(primaryDisplayBounds);
-    mainWindow.setAlwaysOnTop(true, 'screen-saver');
+    window.setBounds(primaryDisplayBounds);
+    window.setAlwaysOnTop(true, 'screen-saver');
   }
 
-  mainWindow.on('close', (event: ElectronEvent) => {
+  window.on('close', (event: ElectronEvent) => {
     if (isRecreatingMainWindow || isQuitting) {
       return;
     }
@@ -382,16 +391,16 @@ function createWindow(mode: AppMode = appMode) {
     event.preventDefault();
 
     if (locked) {
-      mainWindow?.show();
-      mainWindow?.focus();
+      window.show();
+      window.focus();
       return;
     }
 
-    mainWindow?.hide();
+    window.hide();
     log('Main window hidden to tray');
   });
 
-  mainWindow.on('blur', () => {
+  window.on('blur', () => {
     if (locked) {
       setTimeout(() => {
         mainWindow?.show();
@@ -400,7 +409,7 @@ function createWindow(mode: AppMode = appMode) {
     }
   });
 
-  mainWindow.webContents.on('before-input-event', (event: ElectronEvent, input: Input) => {
+  window.webContents.on('before-input-event', (event: ElectronEvent, input: Input) => {
     const key = input.key.toLowerCase();
 
     if (input.control && input.shift && key === 'u') {
@@ -415,13 +424,13 @@ function createWindow(mode: AppMode = appMode) {
     }
   });
 
-  mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedUrl) => {
+  window.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedUrl) => {
     const message = `Failed to load ${validatedUrl}: ${errorCode} ${errorDescription}`;
     log(message);
     void mainWindow?.loadURL(fallbackHtml(message));
   });
 
-  mainWindow.webContents.on('did-finish-load', () => {
+  window.webContents.on('did-finish-load', () => {
     debugLog(`Renderer finished loading: ${mainWindow?.webContents.getURL()}`);
     mainWindow?.setTitle('PreFlight');
 
@@ -431,48 +440,48 @@ function createWindow(mode: AppMode = appMode) {
     }
   });
 
-  mainWindow.webContents.on('render-process-gone', (_event, details) => {
+  window.webContents.on('render-process-gone', (_event, details) => {
     log('Renderer process exited', details);
   });
 
-  mainWindow.webContents.on('crashed', () => {
+  window.webContents.on('crashed', () => {
     log('Renderer process crashed');
   });
 
-  mainWindow.webContents.on('console-message', (_event, level, message, line, sourceId) => {
+  window.webContents.on('console-message', (_event, level, message, line, sourceId) => {
     debugLog(`Renderer console [${level}] ${sourceId}:${line} ${message}`);
   });
 
-  loadRenderer(mainWindow);
+  loadRenderer(window);
 
   if (!shouldLockWindow) {
-    mainWindow.show();
-    mainWindow.focus();
+    window.show();
+    window.focus();
 
     if (isDebug) {
-      mainWindow.webContents.openDevTools({ mode: 'detach' });
+      window.webContents.openDevTools({ mode: 'detach' });
       logWindowSafetyState();
     }
   }
 
-  mainWindow.once('ready-to-show', () => {
-    mainWindow?.show();
+  window.once('ready-to-show', () => {
+    window.show();
 
     if (shouldLockWindow) {
-      mainWindow?.setBounds(primaryDisplayBounds);
-      mainWindow?.setFullScreen(true);
-      mainWindow?.setAlwaysOnTop(true, 'screen-saver');
-      syncOverlayWindows();
+      window.setBounds(primaryDisplayBounds);
+      window.setFullScreen(true);
+      window.setAlwaysOnTop(true, 'screen-saver');
+      syncOverlayWindows({ recreateBlockers: true });
     }
 
-    mainWindow?.focus();
+    window.focus();
 
     if (isDebug || shouldLockWindow) {
       logWindowSafetyState();
     }
 
-    if (isDebug && !mainWindow?.webContents.isDevToolsOpened()) {
-      mainWindow?.webContents.openDevTools({ mode: 'detach' });
+    if (isDebug && !window.webContents.isDevToolsOpened()) {
+      window.webContents.openDevTools({ mode: 'detach' });
     }
   });
 }
@@ -508,7 +517,22 @@ function enterEditMode(reason: string, openSettings = true) {
   recreateMainWindow('edit');
 }
 
-function enterLockedMode(reason: string) {
+function unlockToTray(reason: string) {
+  log(`Unlocking to tray: ${reason}`);
+  appMode = 'edit';
+  locked = false;
+  openSettingsOnNextLoad = false;
+  closeBlockerWindows();
+
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    const window = mainWindow;
+    mainWindow = null;
+    window.hide();
+    window.destroy();
+  }
+}
+
+function enterLockedMode(reason: string, options: { recreateBlockers?: boolean } = {}) {
   appMode = isOverlayMode ? 'locked' : 'edit';
   locked = appMode === 'locked' && isOverlayMode;
   openSettingsOnNextLoad = false;
@@ -520,8 +544,13 @@ function enterLockedMode(reason: string) {
     return;
   }
 
+  if (options.recreateBlockers) {
+    closeBlockerWindows();
+  }
+
   recreateMainWindow('locked');
-  syncOverlayWindows();
+  syncOverlayWindows({ recreateBlockers: options.recreateBlockers });
+  scheduleOverlayRefreshes(reason);
 }
 
 function configureInitialMode() {
@@ -548,7 +577,7 @@ function createBlockerWindow(display: Display) {
     width: display.bounds.width,
     height: display.bounds.height,
     title: 'PreFlight Blocker',
-    fullscreen: true,
+    fullscreen: false,
     frame: false,
     resizable: false,
     movable: false,
@@ -565,8 +594,8 @@ function createBlockerWindow(display: Display) {
     }
   });
 
-  blocker.setBounds(display.bounds);
-  blocker.setAlwaysOnTop(true, 'screen-saver');
+  // Position before loading so the first paint happens on the intended monitor.
+  forceBlockerVisible(blocker, display, false);
 
   blocker.on('close', (event: ElectronEvent) => {
     if (locked && !isQuitting) {
@@ -591,11 +620,12 @@ function createBlockerWindow(display: Display) {
     }
   });
 
+  blocker.webContents.on('did-finish-load', () => {
+    forceBlockerVisible(blocker, display);
+  });
+
   blocker.once('ready-to-show', () => {
-    blocker.setBounds(display.bounds);
-    blocker.setFullScreen(true);
-    blocker.setAlwaysOnTop(true, 'screen-saver');
-    blocker.show();
+    forceBlockerVisible(blocker, display);
   });
 
   void blocker.loadURL(blockerHtml());
@@ -603,7 +633,28 @@ function createBlockerWindow(display: Display) {
   log('Created secondary display blocker', { id: display.id, bounds: display.bounds });
 }
 
-function syncOverlayWindows() {
+function forceBlockerVisible(blocker: BrowserWindowInstance, display: Display, shouldShow = true) {
+  if (blocker.isDestroyed()) {
+    return;
+  }
+
+  // Sleep/resume can leave secondary windows in the compositor but not visibly painted.
+  // Reapplying geometry, topmost state, visibility, and an explicit invalidation forces
+  // Windows to redraw the static blocker immediately on the target display.
+  blocker.setBounds(display.bounds);
+  blocker.setFullScreen(true);
+  blocker.setBounds(display.bounds);
+  blocker.setAlwaysOnTop(true, 'screen-saver');
+  blocker.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+
+  if (shouldShow) {
+    blocker.showInactive();
+    blocker.moveTop();
+    blocker.webContents.invalidate();
+  }
+}
+
+function syncOverlayWindows(options: { recreateBlockers?: boolean } = {}) {
   if (!isOverlayMode || appMode !== 'locked' || !locked) {
     return;
   }
@@ -615,6 +666,10 @@ function syncOverlayWindows() {
   mainWindow?.setBounds(primaryDisplay.bounds);
   mainWindow?.setFullScreen(true);
   mainWindow?.setAlwaysOnTop(true, 'screen-saver');
+
+  if (options.recreateBlockers) {
+    closeBlockerWindows();
+  }
 
   for (const [displayId, blocker] of blockerWindows.entries()) {
     if (!activeDisplayIds.has(displayId) || displayId === primaryDisplay.id) {
@@ -631,14 +686,26 @@ function syncOverlayWindows() {
     const blocker = blockerWindows.get(display.id);
 
     if (blocker) {
-      blocker.setBounds(display.bounds);
-      blocker.setFullScreen(true);
-      blocker.setAlwaysOnTop(true, 'screen-saver');
-      blocker.show();
+      forceBlockerVisible(blocker, display);
       continue;
     }
 
     createBlockerWindow(display);
+  }
+
+  mainWindow?.focus();
+}
+
+function scheduleOverlayRefreshes(reason: string) {
+  for (const delay of [100, 500, 1250, 2500]) {
+    setTimeout(() => {
+      if (!locked || appMode !== 'locked') {
+        return;
+      }
+
+      log(`Refreshing locked overlay windows after ${reason}`, { delay });
+      syncOverlayWindows();
+    }, delay);
   }
 }
 
@@ -672,7 +739,7 @@ app.whenReady().then(() => {
 
   powerMonitor.on('resume', () => {
     if (getStartOnStartupWakeEnabled()) {
-      enterLockedMode('power resume');
+      enterLockedMode('power resume', { recreateBlockers: true });
       return;
     }
 

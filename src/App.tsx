@@ -98,8 +98,9 @@ function App() {
         ...current,
         mode: 'edit',
         locked: false,
-        openSettings: true
+        openSettings: false
       }));
+      setShowSettings(false);
     });
   }
 
