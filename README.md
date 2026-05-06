@@ -18,3 +18,35 @@ npm run dist
 ## Development
 
 The MVP includes a visible Dev Unlock button so development builds are recoverable while fullscreen locking behavior is added.
+
+## Windows Startup
+
+Open Settings in PreFlight and enable **Start PreFlight when Windows starts**. The toggle uses Electron's login item support for the current Windows user.
+
+## Workstation Unlock Task
+
+Package the app first:
+
+```bash
+npm run package
+```
+
+Then install the current-user unlock task from PowerShell:
+
+```powershell
+.\scripts\windows\install-wakeup-task.ps1
+```
+
+If the executable is somewhere else, pass it explicitly:
+
+```powershell
+.\scripts\windows\install-wakeup-task.ps1 -AppPath "C:\Path\To\PreFlight.exe"
+```
+
+Remove it with:
+
+```powershell
+.\scripts\windows\uninstall-wakeup-task.ps1
+```
+
+The MVP uses the reliable workstation unlock trigger. Wake-from-sleep event timing varies across Windows hardware and power states, so unlock is the recovery trigger for this version.
