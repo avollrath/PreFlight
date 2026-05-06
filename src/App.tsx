@@ -295,9 +295,14 @@ function App() {
           </ul>
 
           <div className="actions">
-            <button type="button" disabled={!isComplete} onClick={unlock}>
-              Unlock desktop
-            </button>
+            <div className="unlock-action">
+              <button type="button" disabled={!isComplete} onClick={unlock}>
+                Unlock desktop
+              </button>
+              {!isComplete && (
+                <span className="unlock-helper">Complete all items above to unlock</span>
+              )}
+            </div>
             {!modeState.strict && (
               <button type="button" className="dev-unlock" onClick={ignoreDevUnlock}>
                 Dev Unlock Disabled

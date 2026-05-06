@@ -273,6 +273,19 @@ h2 {
   margin-top: 30px;
 }
 
+.unlock-action {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.unlock-helper {
+  color: var(--muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  opacity: 0.72;
+}
+
 button {
   min-height: 48px;
   border: 1px solid var(--panel-border);
