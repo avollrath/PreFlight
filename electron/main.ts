@@ -1,6 +1,11 @@
 import { app, BrowserWindow, ipcMain, Menu } from 'electron';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import {
+  getChecklistState,
+  saveChecklistItems,
+  setChecklistItemCompletion
+} from './store.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -42,6 +47,14 @@ ipcMain.handle('preflight:unlock', () => {
   mainWindow?.hide();
   return true;
 });
+
+ipcMain.handle('preflight:get-state', () => getChecklistState());
+
+ipcMain.handle('preflight:set-completion', (_event, itemId: string, completed: boolean) =>
+  setChecklistItemCompletion(itemId, completed)
+);
+
+ipcMain.handle('preflight:save-items', (_event, texts: string[]) => saveChecklistItems(texts));
 
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {

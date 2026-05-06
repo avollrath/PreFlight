@@ -9,12 +9,22 @@
 }
 
 .preflight-panel {
+  position: relative;
   width: min(720px, 100%);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
   padding: 40px;
   background: rgba(18, 24, 28, 0.9);
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+}
+
+.top-row,
+.settings-header,
+.settings-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
 }
 
 .eyebrow,
@@ -127,4 +137,67 @@ button:focus-visible,
 .dev-unlock {
   color: #f8faf8;
   background: #3f5964;
+}
+
+.ghost-button {
+  min-height: 38px;
+  color: #d9e3dc;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.settings-backdrop {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(5, 8, 10, 0.78);
+}
+
+.settings-panel {
+  width: min(680px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  padding: 28px;
+  background: #141b1f;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.48);
+}
+
+.settings-kicker {
+  margin: 0 0 4px;
+  color: #9db5ad;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+h2 {
+  margin: 0;
+  color: #f6f7f3;
+  font-size: 1.8rem;
+}
+
+.settings-list {
+  display: grid;
+  gap: 10px;
+  margin: 24px 0;
+}
+
+.settings-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.settings-item input {
+  min-height: 44px;
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  padding: 0 12px;
+  color: #f6f7f3;
+  background: rgba(255, 255, 255, 0.06);
 }

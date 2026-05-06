@@ -1,0 +1,86 @@
+import { app } from 'electron';
+import fs from 'node:fs';
+import path from 'node:path';
+import { randomUUID } from 'node:crypto';
+const defaultItems = [
+    'Drink water',
+    "Review today's top 3 priorities",
+    'Check calendar',
+    'Open task tracker',
+    'No YouTube before 18:00'
+];
+const storePath = path.join(app.getPath('userData'), 'preflight-store.json');
+function todayKey() {
+    const now = new Date();
+    const offset = now.getTimezoneOffset();
+    return new Date(now.getTime() - offset * 60_000).toISOString().slice(0, 10);
+}
+function createDefaultStore() {
+    return {
+        items: defaultItems.map((text) => ({ id: randomUUID(), text })),
+        completionsByDate: {}
+    };
+}
+function readStore() {
+    try {
+        const raw = fs.readFileSync(storePath, 'utf8');
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed.items) || parsed.items.length === 0) {
+            return createDefaultStore();
+        }
+        return {
+            items: parsed.items,
+            completionsByDate: parsed.completionsByDate ?? {}
+        };
+    }
+    catch {
+        return createDefaultStore();
+    }
+}
+function writeStore(data) {
+    fs.mkdirSync(path.dirname(storePath), { recursive: true });
+    fs.writeFileSync(storePath, JSON.stringify(data, null, 2));
+}
+export function getChecklistState() {
+    const data = readStore();
+    const date = todayKey();
+    const completed = new Set(data.completionsByDate[date] ?? []);
+    return {
+        date,
+        items: data.items.map((item) => ({
+            ...item,
+            completed: completed.has(item.id)
+        }))
+    };
+}
+export function setChecklistItemCompletion(itemId, completed) {
+    const data = readStore();
+    const date = todayKey();
+    const completedItems = new Set(data.completionsByDate[date] ?? []);
+    if (completed) {
+        completedItems.add(itemId);
+    }
+    else {
+        completedItems.delete(itemId);
+    }
+    data.completionsByDate[date] = Array.from(completedItems);
+    writeStore(data);
+    return getChecklistState();
+}
+export function saveChecklistItems(texts) {
+    const existing = readStore();
+    const previousByText = new Map(existing.items.map((item) => [item.text, item.id]));
+    const items = texts
+        .map((text) => text.trim())
+        .filter(Boolean)
+        .map((text) => ({
+        id: previousByText.get(text) ?? randomUUID(),
+        text
+    }));
+    const data = {
+        items: items.length > 0 ? items : createDefaultStore().items,
+        completionsByDate: existing.completionsByDate
+    };
+    writeStore(data);
+    return getChecklistState();
+}
