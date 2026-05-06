@@ -2,7 +2,8 @@ import type {
   BrowserWindow as BrowserWindowInstance,
   Display,
   Event as ElectronEvent,
-  Input
+  Input,
+  Tray as TrayInstance
 } from 'electron';
 import path from 'node:path';
 import {
@@ -17,8 +18,10 @@ const {
   globalShortcut,
   ipcMain,
   Menu,
+  nativeImage,
   powerMonitor,
-  screen
+  screen,
+  Tray
 } = require('electron') as typeof import('electron');
 
 const isDev =
@@ -30,12 +33,14 @@ const isDebug = process.env.PREFLIGHT_DEV_DEBUG === '1';
 const isOverlayMode = !isDebug && (!isDev || process.env.PREFLIGHT_DEV_LOCKED === '1');
 
 let mainWindow: BrowserWindowInstance | null = null;
+let tray: TrayInstance | null = null;
 const blockerWindows = new Map<number, BrowserWindowInstance>();
 type AppMode = 'locked' | 'edit';
 
 let appMode: AppMode = isOverlayMode ? 'locked' : 'edit';
 let locked = appMode === 'locked' && isOverlayMode;
 let isRecreatingMainWindow = false;
+let isQuitting = false;
 
 function log(message: string, extra?: unknown) {
   if (extra === undefined) {
@@ -160,6 +165,59 @@ function closeBlockerWindows() {
   blockerWindows.clear();
 }
 
+function getLogoPath() {
+  if (app.isPackaged) {
+    return path.join(process.resourcesPath, 'assets', 'logo.png');
+  }
+
+  return path.join(app.getAppPath(), 'src', 'assets', 'logo.png');
+}
+
+function getLogoImage() {
+  const logoPath = getLogoPath();
+  const image = nativeImage.createFromPath(logoPath);
+
+  if (image.isEmpty()) {
+    log('Logo image could not be loaded', { logoPath });
+  }
+
+  return image;
+}
+
+function quitPreFlight() {
+  isQuitting = true;
+  locked = false;
+  closeBlockerWindows();
+  app.quit();
+}
+
+function createTray() {
+  if (tray) {
+    return;
+  }
+
+  // nativeImage keeps the tray icon portable across Windows, macOS, and Linux.
+  tray = new Tray(getLogoImage());
+  tray.setToolTip('PreFlight');
+  tray.setContextMenu(
+    Menu.buildFromTemplate([
+      {
+        label: 'Open Edit Mode',
+        click: () => enterEditMode('tray menu')
+      },
+      {
+        label: 'Lock Now',
+        click: () => enterLockedMode('tray menu')
+      },
+      { type: 'separator' },
+      {
+        label: 'Quit',
+        click: quitPreFlight
+      }
+    ])
+  );
+}
+
 function logWindowSafetyState() {
   if (!mainWindow) {
     return;
@@ -267,6 +325,7 @@ function createWindow(mode: AppMode = appMode) {
     minWidth: 900,
     minHeight: 620,
     title: 'PreFlight',
+    icon: getLogoImage(),
     fullscreen: shouldLockWindow,
     frame: !shouldLockWindow,
     resizable: !shouldLockWindow,
@@ -287,7 +346,7 @@ function createWindow(mode: AppMode = appMode) {
   }
 
   mainWindow.on('close', (event: ElectronEvent) => {
-    if (locked && !isRecreatingMainWindow) {
+    if (locked && !isRecreatingMainWindow && !isQuitting) {
       event.preventDefault();
       mainWindow?.show();
       mainWindow?.focus();
@@ -452,7 +511,7 @@ function createBlockerWindow(display: Display) {
   blocker.setAlwaysOnTop(true, 'screen-saver');
 
   blocker.on('close', (event: ElectronEvent) => {
-    if (locked) {
+    if (locked && !isQuitting) {
       event.preventDefault();
       blocker.show();
       blocker.focus();
@@ -548,6 +607,7 @@ app.whenReady().then(() => {
   );
   globalShortcut.register('CommandOrControl+Shift+U', emergencyUnlock);
   registerDisplayHandlers();
+  createTray();
   createWindow(appMode);
 
   powerMonitor.on('resume', () => {
@@ -624,6 +684,8 @@ ipcMain.handle('preflight:set-startup-enabled', (_event, enabled: boolean) => {
 app.on('will-quit', () => {
   globalShortcut.unregisterAll();
   closeBlockerWindows();
+  tray?.destroy();
+  tray = null;
 });
 
 app.on('render-process-gone', (_event, webContents, details) => {

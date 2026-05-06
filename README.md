@@ -12,6 +12,7 @@ This MVP is intentionally safe for development: the **Dev Unlock** button is alw
 - Daily checklist completion state stored locally
 - Editable checklist items in the settings panel
 - Windowed setup mode for editing without monitor blockers
+- System tray controls for edit mode, lock now, and quit
 - Unlock button enabled only when every item is complete
 - Always-available Dev Unlock button
 - `Ctrl+Shift+U` development unlock shortcut
@@ -41,6 +42,8 @@ The development escape routes are always available:
 Both escape routes enter setup mode. Setup mode is a normal window with no blocker overlays, no always-on-top lock, and normal window controls. The keyboard shortcut is handled in the Electron main process, so it still works if React fails to load.
 
 Use **Setup mode** or **Settings** to edit checklist items. Saving checklist changes stays in setup mode. Use **Lock now** when you want to return to the fullscreen overlay and secondary monitor blockers. Setup mode is not persisted; a fresh app launch starts locked again, and PreFlight re-enters locked mode after a system resume event.
+
+PreFlight also adds a system tray icon using the app logo. Its menu includes **Open Edit Mode**, **Lock Now**, and **Quit**.
 
 Use debug mode when you want a safer troubleshooting window with DevTools and verbose renderer diagnostics:
 
