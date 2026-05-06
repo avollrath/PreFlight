@@ -981,6 +981,7 @@ ipcMain.handle('preflight:unlock', () => {
 ipcMain.handle('preflight:get-mode', () => ({
   mode: appMode,
   locked,
+  strict: strictLockedMode,
   debug: isDebug,
   overlay: isOverlayMode,
   openSettings: consumeOpenSettingsOnNextLoad()
@@ -997,6 +998,7 @@ ipcMain.handle('preflight:enter-edit-mode', () => {
   return {
     mode: appMode,
     locked,
+    strict: strictLockedMode,
     debug: isDebug,
     overlay: isOverlayMode,
     openSettings: true
@@ -1008,6 +1010,7 @@ ipcMain.handle('preflight:lock-now', () => {
   return {
     mode: appMode,
     locked,
+    strict: strictLockedMode,
     debug: isDebug,
     overlay: isOverlayMode,
     openSettings: false

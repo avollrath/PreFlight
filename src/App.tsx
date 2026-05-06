@@ -37,6 +37,7 @@ function App() {
   const [modeState, setModeState] = useState<PreflightModeState>({
     mode: 'edit',
     locked: false,
+    strict: true,
     debug: false,
     overlay: true,
     openSettings: true
@@ -101,6 +102,7 @@ function App() {
         ...current,
         mode: 'edit',
         locked: false,
+        strict: current.strict,
         openSettings: false
       }));
       setShowSettings(false);
@@ -296,9 +298,11 @@ function App() {
             <button type="button" disabled={!isComplete} onClick={unlock}>
               Unlock desktop
             </button>
-            <button type="button" className="dev-unlock" onClick={ignoreDevUnlock}>
-              Dev Unlock Disabled
-            </button>
+            {!modeState.strict && (
+              <button type="button" className="dev-unlock" onClick={ignoreDevUnlock}>
+                Dev Unlock Disabled
+              </button>
+            )}
           </div>
         </div>
       </section>

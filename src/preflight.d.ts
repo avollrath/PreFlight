@@ -14,6 +14,7 @@ export type ChecklistState = {
 export type PreflightModeState = {
   mode: 'locked' | 'edit';
   locked: boolean;
+  strict: boolean;
   debug: boolean;
   overlay: boolean;
   openSettings: boolean;
