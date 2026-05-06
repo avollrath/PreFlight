@@ -128,35 +128,12 @@ function blockerHtml() {
             position: fixed;
             inset: 0;
             border: 1px solid rgba(255, 23, 68, 0.38);
+            background:
+              radial-gradient(circle at 50% 50%, transparent 0%, rgba(0, 0, 0, 0.18) 58%, rgba(0, 0, 0, 0.5) 100%);
             box-shadow:
               0 0 0 1px rgba(255, 23, 68, 0.08) inset,
               0 0 44px rgba(255, 23, 68, 0.16) inset;
             pointer-events: none;
-          }
-
-          body::after {
-            content: "";
-            position: fixed;
-            top: 12%;
-            left: -16%;
-            width: 18%;
-            height: 12px;
-            background: linear-gradient(90deg, transparent, rgba(255, 23, 68, 0.3), #ff1744, rgba(255, 23, 68, 0.3), transparent);
-            filter: blur(1px);
-            box-shadow: 0 0 20px #ff1744, 0 0 44px rgba(255, 23, 68, 0.24);
-            animation: scan 3.2s ease-in-out infinite alternate;
-          }
-
-          @keyframes scan {
-            from { transform: translateX(0); }
-            to { transform: translateX(720%); }
-          }
-
-          @media (prefers-reduced-motion: reduce) {
-            body::after {
-              animation: none;
-              left: 41%;
-            }
           }
         </style>
       </head>
