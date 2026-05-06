@@ -49,6 +49,13 @@
     0 28px 90px rgba(0, 0, 0, 0.72);
 }
 
+.setup-mode .preflight-panel {
+  box-shadow:
+    0 0 0 1px rgba(255, 23, 68, 0.045) inset,
+    0 0 17px rgba(255, 23, 68, 0.09),
+    0 28px 90px rgba(0, 0, 0, 0.72);
+}
+
 .dashboard-content {
   max-height: calc(100vh - 64px - clamp(28px, 4vw, 46px) * 2);
   overflow-x: hidden;
@@ -85,6 +92,14 @@
   border-right: 2px solid var(--accent);
   border-bottom: 2px solid var(--accent);
   box-shadow: 4px 4px 18px var(--accent-soft);
+}
+
+.setup-mode .preflight-panel::before {
+  box-shadow: -4px -4px 9px rgba(255, 23, 68, 0.12);
+}
+
+.setup-mode .preflight-panel::after {
+  box-shadow: 4px 4px 9px rgba(255, 23, 68, 0.12);
 }
 
 .top-row,
@@ -130,6 +145,10 @@
     linear-gradient(90deg, rgba(255, 23, 68, 0.1), transparent 34%, rgba(255, 23, 68, 0.07)),
     #090104;
   box-shadow: 0 0 18px rgba(255, 23, 68, 0.1) inset;
+}
+
+.setup-mode .scan-bar {
+  opacity: 0.5;
 }
 
 .scan-beam {
@@ -227,6 +246,11 @@ h2 {
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.setup-mode .checklist {
+  border: 1px dashed rgba(217, 154, 168, 0.34);
+  padding: 10px;
 }
 
 .checklist label {

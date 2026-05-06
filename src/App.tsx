@@ -228,7 +228,7 @@ function App() {
   }
 
   return (
-    <main className="app-shell">
+    <main className={`app-shell ${modeState.mode === 'edit' ? 'setup-mode' : 'locked-mode'}`}>
       <section className="preflight-panel" aria-labelledby="preflight-title">
         <div className="dashboard-content">
           <div className="top-row">
