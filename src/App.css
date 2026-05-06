@@ -396,6 +396,19 @@ button:focus-visible,
   background-image: radial-gradient(circle, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
   background-size: 24px 24px;
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.7);
+  opacity: 0;
+  transform: translateY(-8px);
+  transition:
+    opacity 120ms ease-in,
+    transform 120ms ease-in;
+}
+
+.settings-view.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 180ms ease-out,
+    transform 180ms ease-out;
 }
 
 /* Header and description: prominent title with quieter helper copy. */

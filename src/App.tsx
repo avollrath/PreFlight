@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type TransitionEvent } from 'react';
 import type { ChecklistItem, ChecklistState, PreflightModeState } from './preflight';
 import './App.css';
 
@@ -32,6 +32,7 @@ function App() {
     items: fallbackItems
   });
   const [showSettings, setShowSettings] = useState(false);
+  const [settingsVisible, setSettingsVisible] = useState(false);
   const [draftItems, setDraftItems] = useState<DraftChecklistItem[]>(toDraftItems(fallbackItems));
   const [startupEnabled, setStartupEnabled] = useState(false);
   const [modeState, setModeState] = useState<PreflightModeState>({
@@ -52,7 +53,7 @@ function App() {
       setModeState(nextMode);
 
       if (nextMode.openSettings) {
-        setShowSettings(true);
+        openSettings();
       }
     });
     void window.preflight?.getStartupEnabled().then(setStartupEnabled);
@@ -68,6 +69,18 @@ function App() {
     window.addEventListener('keydown', ignoreStrictDevShortcut);
     return () => window.removeEventListener('keydown', ignoreStrictDevShortcut);
   }, []);
+
+  useEffect(() => {
+    if (!showSettings) {
+      return;
+    }
+
+    const animationFrame = requestAnimationFrame(() => {
+      setSettingsVisible(true);
+    });
+
+    return () => cancelAnimationFrame(animationFrame);
+  }, [showSettings]);
 
   useEffect(() => {
     if (modeState.mode !== 'edit') {
@@ -125,7 +138,7 @@ function App() {
         strict: current.strict,
         openSettings: false
       }));
-      setShowSettings(false);
+      closeSettings();
     });
   }
 
@@ -138,18 +151,33 @@ function App() {
       setModeState(nextMode);
 
       if (nextMode.openSettings) {
-        setShowSettings(true);
+        openSettings();
       }
     });
   }
 
   function lockNow() {
-    setShowSettings(false);
+    closeSettings();
     void window.preflight?.lockNow().then(setModeState);
   }
 
   function openSettings() {
     setShowSettings(true);
+    requestAnimationFrame(() => {
+      setSettingsVisible(true);
+    });
+  }
+
+  function closeSettings() {
+    setSettingsVisible(false);
+  }
+
+  function finishSettingsClose(event: TransitionEvent<HTMLElement>) {
+    if (event.target !== event.currentTarget || settingsVisible) {
+      return;
+    }
+
+    setShowSettings(false);
   }
 
   function updateDraftItem(itemId: string, value: string) {
@@ -170,7 +198,7 @@ function App() {
     void window.preflight?.saveItems(draftItems.map((item) => item.text)).then((nextState) => {
       setState(nextState);
       setDraftItems(toDraftItems(nextState.items));
-      setShowSettings(false);
+      closeSettings();
     });
   }
 
@@ -182,7 +210,11 @@ function App() {
   if (showSettings) {
     return (
       <main className="app-shell settings-shell">
-        <section className="settings-view" aria-labelledby="settings-title">
+        <section
+          className={`settings-view ${settingsVisible ? 'is-visible' : ''}`}
+          aria-labelledby="settings-title"
+          onTransitionEnd={finishSettingsClose}
+        >
           {/* Header: identifies the settings area and provides a clear return action. */}
           <header className="settings-header">
             <div>
@@ -197,7 +229,7 @@ function App() {
             <button
               type="button"
               className="ghost-button settings-close"
-              onClick={() => setShowSettings(false)}
+              onClick={closeSettings}
             >
               Close
             </button>
