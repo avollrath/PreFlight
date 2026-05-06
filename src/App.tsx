@@ -58,15 +58,14 @@ function App() {
   }, []);
 
   useEffect(() => {
-    function handleDevUnlock(event: KeyboardEvent) {
+    function ignoreStrictDevShortcut(event: KeyboardEvent) {
       if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === 'u') {
         event.preventDefault();
-        unlock();
       }
     }
 
-    window.addEventListener('keydown', handleDevUnlock);
-    return () => window.removeEventListener('keydown', handleDevUnlock);
+    window.addEventListener('keydown', ignoreStrictDevShortcut);
+    return () => window.removeEventListener('keydown', ignoreStrictDevShortcut);
   }, []);
 
   const completedCount = state.items.filter((item) => item.completed).length;
@@ -93,7 +92,11 @@ function App() {
   }
 
   function unlock() {
-    void window.preflight?.unlock().then(() => {
+    void window.preflight?.unlock().then((unlocked) => {
+      if (!unlocked) {
+        return;
+      }
+
       setModeState((current) => ({
         ...current,
         mode: 'edit',
@@ -102,6 +105,10 @@ function App() {
       }));
       setShowSettings(false);
     });
+  }
+
+  function ignoreDevUnlock() {
+    return;
   }
 
   function enterSetupMode() {
@@ -225,12 +232,12 @@ function App() {
           <div className="top-row">
             <div>
               <div className="eyebrow">
-                {modeState.mode === 'edit' ? 'Setup mode' : 'MVP development mode'}
+                {modeState.mode === 'edit' ? 'Setup mode' : 'Strict locked mode'}
               </div>
               <div className="shortcut-label">
                 {modeState.mode === 'edit'
                   ? 'Windowed editing is active. Lock now returns to the overlay.'
-                  : 'Ctrl+Shift+U unlocks to setup mode during development'}
+                  : 'Complete every checklist item to unlock. Dev shortcuts are disabled.'}
               </div>
             </div>
             <div className="top-actions">
@@ -285,8 +292,8 @@ function App() {
             <button type="button" disabled={!isComplete} onClick={unlock}>
               Unlock desktop
             </button>
-            <button type="button" className="dev-unlock" onClick={unlock}>
-              Dev Unlock
+            <button type="button" className="dev-unlock" onClick={ignoreDevUnlock}>
+              Dev Unlock Disabled
             </button>
           </div>
         </div>

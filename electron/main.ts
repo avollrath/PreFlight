@@ -34,6 +34,7 @@ const isDev =
   !app.isPackaged;
 const isDebug = process.env.PREFLIGHT_DEV_DEBUG === '1';
 const isOverlayMode = !isDebug && (!isDev || process.env.PREFLIGHT_DEV_LOCKED === '1');
+const strictLockedMode = true;
 
 let mainWindow: BrowserWindowInstance | null = null;
 let tray: TrayInstance | null = null;
@@ -173,8 +174,15 @@ function blockerHtml() {
 }
 
 function emergencyUnlock() {
+  if (strictLockedMode && locked) {
+    log('Strict locked mode ignored emergency unlock request');
+    reinforceLockedOverlay('ignored emergency unlock');
+    return false;
+  }
+
   log('Emergency unlock requested');
   unlockToTray('emergency unlock');
+  return true;
 }
 
 function closeBlockerWindows() {
@@ -228,6 +236,19 @@ function unregisterLockShortcutBlockers() {
   }
 
   registeredLockShortcuts.clear();
+}
+
+function isChecklistComplete(state = getChecklistState()) {
+  return state.items.length > 0 && state.items.every((item) => item.completed);
+}
+
+function maybeUnlockCompletedChecklist(reason: string, state = getChecklistState()) {
+  if (!locked || appMode !== 'locked' || !isChecklistComplete(state)) {
+    return false;
+  }
+
+  unlockToTray(reason);
+  return true;
 }
 
 function getLogoPath() {
@@ -475,7 +496,7 @@ function createWindow(mode: AppMode = appMode) {
 
     if (input.control && input.shift && key === 'u') {
       event.preventDefault();
-      emergencyUnlock();
+      void emergencyUnlock();
       return;
     }
 
@@ -694,7 +715,7 @@ function createBlockerWindow(display: Display) {
 
     if (input.control && input.shift && key === 'u') {
       event.preventDefault();
-      emergencyUnlock();
+      void emergencyUnlock();
       return;
     }
 
@@ -869,8 +890,17 @@ app.whenReady().then(() => {
 });
 
 ipcMain.handle('preflight:unlock', () => {
-  emergencyUnlock();
-  return true;
+  if (strictLockedMode) {
+    if (maybeUnlockCompletedChecklist('completed checklist unlock')) {
+      return true;
+    }
+
+    log('Strict locked mode ignored renderer unlock request');
+    reinforceLockedOverlay('ignored renderer unlock');
+    return false;
+  }
+
+  return emergencyUnlock();
 });
 
 ipcMain.handle('preflight:get-mode', () => ({
@@ -909,11 +939,17 @@ ipcMain.handle('preflight:lock-now', () => {
   };
 });
 
-ipcMain.handle('preflight:get-state', () => getChecklistState());
+ipcMain.handle('preflight:get-state', () => {
+  const state = getChecklistState();
+  maybeUnlockCompletedChecklist('completed checklist loaded', state);
+  return state;
+});
 
-ipcMain.handle('preflight:set-completion', (_event, itemId: string, completed: boolean) =>
-  setChecklistItemCompletion(itemId, completed)
-);
+ipcMain.handle('preflight:set-completion', (_event, itemId: string, completed: boolean) => {
+  const state = setChecklistItemCompletion(itemId, completed);
+  maybeUnlockCompletedChecklist('all checklist items completed', state);
+  return state;
+});
 
 ipcMain.handle('preflight:save-items', (_event, texts: string[]) => saveChecklistItems(texts));
 

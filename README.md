@@ -2,7 +2,7 @@
 
 PreFlight is a Windows-first Electron productivity gate. It starts in a windowed setup mode for editing your checklist, then can switch into a fullscreen checklist overlay when you choose **Lock now** or when startup/wake locking is enabled.
 
-This MVP is intentionally safe for development: the **Dev Unlock** button is always visible, and `Ctrl+Shift+U` exits the lock back to the tray.
+Strict locked mode disables **Dev Unlock** and `Ctrl+Shift+U` while locked. The lock closes only when every checklist item is complete.
 
 ## Features
 
@@ -14,9 +14,9 @@ This MVP is intentionally safe for development: the **Dev Unlock** button is alw
 - Editable checklist items in the settings panel
 - Windowed setup mode for editing without monitor blockers
 - System tray controls for edit mode, lock now, and quit
-- Unlock button enabled only when every item is complete
-- Always-available Dev Unlock button
-- `Ctrl+Shift+U` development unlock shortcut
+- Automatic unlock when every checklist item is complete
+- Disabled Dev Unlock button in strict locked mode
+- Disabled `Ctrl+Shift+U` emergency unlock while strict locked mode is active
 - Windows login startup toggle
 - Current-user Windows Task Scheduler helper for workstation unlock
 - Windows packaging through electron-builder
@@ -35,12 +35,12 @@ npm run dev
 
 `npm run dev` starts in edit mode with Settings open. Closing the main window with the `X` hides it to the system tray instead of quitting. Use **Lock now** from the app or tray when you want the real overlay: fullscreen on the primary monitor, secondary monitor blocker windows, always-on-top behavior, and blocked `Alt+F4` while locked.
 
-The development escape routes are always available:
+Strict locked mode intentionally disables development escape routes while locked:
 
-- Click **Dev Unlock**
-- Press `Ctrl+Shift+U`
+- Clicking **Dev Unlock Disabled** has no effect
+- Pressing `Ctrl+Shift+U` has no effect
 
-Both escape routes close the primary overlay, close secondary blockers, and leave PreFlight running in the tray. Use the tray menu's **Open Edit Mode** item to reopen setup mode. The keyboard shortcut is handled in the Electron main process, so it still works if React fails to load.
+Completing every checklist item closes the primary overlay, closes secondary blockers, and leaves PreFlight running in the tray. Use the tray menu's **Open Edit Mode** item to reopen setup mode.
 
 While locked, PreFlight uses kiosk windows, always-on-top overlays, focus reinforcement, and best-effort Electron shortcut registration for common task-switching shortcuts such as `Alt+Tab` and `Win+Arrow`. Some Windows-reserved keys may require OS kiosk policy to block completely; PreFlight intentionally avoids invasive low-level keyboard hooks.
 
