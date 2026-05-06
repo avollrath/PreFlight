@@ -14,6 +14,14 @@ import {
   setStartOnStartupWakeEnabled,
   setChecklistItemCompletion
 } from './store.js';
+import {
+  enforcePrimaryMonitorBounds,
+  killExplorer,
+  registerBlockedShortcuts,
+  restoreExplorer,
+  startFocusEnforcement,
+  unregisterBlockedShortcuts
+} from './lockMode.js';
 
 const {
   app,
@@ -45,17 +53,6 @@ type OverlaySyncOptions = {
   forceRepaint?: boolean;
   recreateBlockers?: boolean;
 };
-const lockShortcutAccelerators = [
-  'Alt+Tab',
-  'Alt+Shift+Tab',
-  'Super+Tab',
-  'Super+Left',
-  'Super+Right',
-  'Super+Up',
-  'Super+Down',
-  'Super+D',
-  'Super+M'
-];
 
 let appMode: AppMode = 'edit';
 let locked = false;
@@ -64,7 +61,7 @@ let isQuitting = false;
 let openSettingsOnNextLoad = true;
 let lockedSessionHasSeenIncomplete = false;
 let displaySleepBlockerId: number | null = null;
-const registeredLockShortcuts = new Set<string>();
+let stopLockFocusEnforcement: (() => void) | null = null;
 
 function log(message: string, extra?: unknown) {
   if (extra === undefined) {
@@ -212,35 +209,6 @@ function reinforceLockedOverlay(reason: string) {
   mainWindow?.focus();
 }
 
-function registerLockShortcutBlockers() {
-  for (const accelerator of lockShortcutAccelerators) {
-    if (registeredLockShortcuts.has(accelerator)) {
-      continue;
-    }
-
-    const registered = globalShortcut.register(accelerator, () => {
-      reinforceLockedOverlay(`blocked shortcut ${accelerator}`);
-    });
-
-    if (registered) {
-      registeredLockShortcuts.add(accelerator);
-      continue;
-    }
-
-    // Windows reserves some shortcuts before Electron sees them. Those need OS kiosk
-    // policy or a native hook; PreFlight avoids invasive low-level hooks for safety.
-    debugLog(`Could not register lock shortcut blocker: ${accelerator}`);
-  }
-}
-
-function unregisterLockShortcutBlockers() {
-  for (const accelerator of registeredLockShortcuts) {
-    globalShortcut.unregister(accelerator);
-  }
-
-  registeredLockShortcuts.clear();
-}
-
 function isChecklistComplete(state = getChecklistState()) {
   return state.items.length > 0 && state.items.every((item) => item.completed);
 }
@@ -290,6 +258,29 @@ function releaseDisplaySleepBlocker(reason: string) {
 
   displaySleepBlockerId = null;
   log('Display sleep blocker stopped', { id: blockerId, reason });
+}
+
+function registerEmergencyUnlockShortcut() {
+  globalShortcut.register('CommandOrControl+Shift+U', emergencyUnlock);
+}
+
+function activateLockModeHardening(window: BrowserWindowInstance, reason: string) {
+  registerBlockedShortcuts(globalShortcut);
+
+  stopLockFocusEnforcement?.();
+  stopLockFocusEnforcement = startFocusEnforcement(window);
+  enforcePrimaryMonitorBounds(window, screen);
+  killExplorer();
+  log(`Lock mode hardening activated: ${reason}`);
+}
+
+function deactivateLockModeHardening(reason: string) {
+  stopLockFocusEnforcement?.();
+  stopLockFocusEnforcement = null;
+  unregisterBlockedShortcuts(globalShortcut);
+  registerEmergencyUnlockShortcut();
+  restoreExplorer();
+  log(`Lock mode hardening deactivated: ${reason}`);
 }
 
 function getLogoPath() {
@@ -610,6 +601,8 @@ function createWindow(mode: AppMode = appMode) {
       window.webContents.openDevTools({ mode: 'detach' });
     }
   });
+
+  return window;
 }
 
 function recreateMainWindow(mode: AppMode) {
@@ -621,8 +614,9 @@ function recreateMainWindow(mode: AppMode) {
   }
 
   mainWindow = null;
-  createWindow(mode);
+  const window = createWindow(mode);
   isRecreatingMainWindow = false;
+  return window;
 }
 
 function enterEditMode(reason: string, openSettings = true) {
@@ -631,7 +625,7 @@ function enterEditMode(reason: string, openSettings = true) {
   openSettingsOnNextLoad = openSettings;
   lockedSessionHasSeenIncomplete = false;
   releaseDisplaySleepBlocker(`enter edit mode: ${reason}`);
-  unregisterLockShortcutBlockers();
+  deactivateLockModeHardening(`enter edit mode: ${reason}`);
   closeBlockerWindows();
   log(`Entering edit mode: ${reason}`);
 
@@ -654,7 +648,7 @@ function unlockToTray(reason: string) {
   openSettingsOnNextLoad = false;
   lockedSessionHasSeenIncomplete = false;
   releaseDisplaySleepBlocker(`unlock to tray: ${reason}`);
-  unregisterLockShortcutBlockers();
+  deactivateLockModeHardening(`unlock to tray: ${reason}`);
   closeBlockerWindows();
 
   if (mainWindow && !mainWindow.isDestroyed()) {
@@ -673,7 +667,7 @@ function enterLockedMode(reason: string, options: OverlaySyncOptions = {}) {
   log(`Entering ${appMode} mode: ${reason}`);
 
   if (!isOverlayMode) {
-    unregisterLockShortcutBlockers();
+    deactivateLockModeHardening(`locked mode unavailable: ${reason}`);
     lockedSessionHasSeenIncomplete = false;
     releaseDisplaySleepBlocker(`locked mode unavailable: ${reason}`);
     closeBlockerWindows();
@@ -682,13 +676,13 @@ function enterLockedMode(reason: string, options: OverlaySyncOptions = {}) {
   }
 
   acquireDisplaySleepBlocker(`enter locked mode: ${reason}`);
-  registerLockShortcutBlockers();
 
   if (options.recreateBlockers) {
     closeBlockerWindows();
   }
 
-  recreateMainWindow('locked');
+  const window = recreateMainWindow('locked');
+  activateLockModeHardening(window, `enter locked mode: ${reason}`);
   scheduleOverlayRefreshes(reason, options);
 }
 
@@ -927,16 +921,19 @@ app.whenReady().then(() => {
   log(
     `Starting app. isPackaged=${app.isPackaged} isDev=${isDev} isDebug=${isDebug} isOverlayMode=${isOverlayMode} appMode=${appMode}`
   );
-  globalShortcut.register('CommandOrControl+Shift+U', emergencyUnlock);
+  registerEmergencyUnlockShortcut();
 
   if (locked) {
     acquireDisplaySleepBlocker('startup locked mode');
-    registerLockShortcutBlockers();
   }
 
   registerDisplayHandlers();
   createTray();
-  createWindow(appMode);
+  const startupWindow = createWindow(appMode);
+
+  if (locked) {
+    activateLockModeHardening(startupWindow, 'startup locked mode');
+  }
 
   powerMonitor.on('resume', () => {
     if (getStartOnStartupWakeEnabled()) {
@@ -1033,11 +1030,18 @@ ipcMain.handle('preflight:set-startup-enabled', (_event, enabled: boolean) => {
 });
 
 app.on('will-quit', () => {
-  globalShortcut.unregisterAll();
+  stopLockFocusEnforcement?.();
+  stopLockFocusEnforcement = null;
+  unregisterBlockedShortcuts(globalShortcut);
+  restoreExplorer();
   releaseDisplaySleepBlocker('will quit');
   closeBlockerWindows();
   tray?.destroy();
   tray = null;
+});
+
+app.on('before-quit', () => {
+  restoreExplorer();
 });
 
 app.on('render-process-gone', (_event, webContents, details) => {
@@ -1052,7 +1056,11 @@ app.on('activate', () => {
   }
 
   if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow(appMode);
+    const window = createWindow(appMode);
+
+    if (locked) {
+      activateLockModeHardening(window, 'activate');
+    }
   }
 });
 
@@ -1064,4 +1072,18 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
+});
+
+process.on('exit', () => {
+  restoreExplorer();
+});
+
+process.on('SIGTERM', () => {
+  restoreExplorer();
+  process.exit(0);
+});
+
+process.on('uncaughtException', (error) => {
+  restoreExplorer();
+  throw error;
 });
