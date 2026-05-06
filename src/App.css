@@ -197,6 +197,11 @@ h2 {
   padding: 0 2px;
 }
 
+.editing-badge {
+  color: rgba(217, 154, 168, 0.72);
+  text-shadow: none;
+}
+
 .progress-track {
   height: 12px;
   margin-bottom: 22px;

@@ -272,7 +272,9 @@ function App() {
 
           <div className="progress-row">
             <span>{progressLabel}</span>
-            <span>{isComplete ? 'Ready' : 'Locked'}</span>
+            <span className={modeState.mode === 'edit' ? 'editing-badge' : undefined}>
+              {modeState.mode === 'edit' ? 'Editing' : 'Locked'}
+            </span>
           </div>
 
           <div className="progress-track" aria-hidden="true">
