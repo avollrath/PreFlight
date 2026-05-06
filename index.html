@@ -25,6 +25,7 @@
     <div id="bg-overlay"></div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <!-- Three.js background is only loaded by the primary renderer; secondary blockers use separate black data-url HTML. -->
     <script type="module">
 import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
