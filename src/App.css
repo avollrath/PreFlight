@@ -137,14 +137,12 @@
 
 .scan-bar {
   position: relative;
-  height: 14px;
+  width: 100%;
+  height: 2px;
   margin: 26px 0 24px;
-  overflow: hidden;
-  border: 1px solid var(--accent-dim-line);
-  background:
-    linear-gradient(90deg, rgba(255, 23, 68, 0.1), transparent 34%, rgba(255, 23, 68, 0.07)),
-    #090104;
-  box-shadow: 0 0 18px rgba(255, 23, 68, 0.1) inset;
+  overflow: visible;
+  background: rgba(180, 0, 0, 0.15);
+  box-shadow: 0 0 8px 1px rgba(180, 0, 0, 0.12);
 }
 
 .setup-mode .scan-bar {
@@ -153,21 +151,36 @@
 
 .scan-beam {
   position: absolute;
-  inset-block: -8px;
-  left: 0;
-  width: 18%;
-  background: linear-gradient(90deg, transparent, rgba(255, 23, 68, 0.3), var(--accent), rgba(255, 23, 68, 0.3), transparent);
-  filter: blur(1px);
-  box-shadow: 0 0 20px var(--accent), 0 0 44px var(--accent-soft);
-  animation: scan-bounce 2.8s ease-in-out infinite alternate;
+  top: 50%;
+  left: -120px;
+  width: 120px;
+  height: 2px;
+  border-radius: 50%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 30, 30, 0.1) 15%,
+    rgba(255, 60, 60, 0.6) 35%,
+    rgba(255, 100, 100, 1) 50%,
+    rgba(255, 60, 60, 0.6) 65%,
+    rgba(255, 30, 30, 0.1) 85%,
+    transparent 100%
+  );
+  box-shadow:
+    0 0 6px 1px rgba(255, 60, 60, 0.5),
+    0 0 20px 4px rgba(220, 20, 20, 0.4),
+    0 0 60px 12px rgba(180, 0, 0, 0.2),
+    0 0 100px 20px rgba(150, 0, 0, 0.1);
+  transform: translateY(-50%);
+  animation: scan-sweep 3.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-@keyframes scan-bounce {
+@keyframes scan-sweep {
   from {
-    transform: translateX(-45%);
+    left: -120px;
   }
   to {
-    transform: translateX(520%);
+    left: calc(100% + 120px);
   }
 }
 
@@ -543,7 +556,7 @@ button:focus-visible,
 @media (prefers-reduced-motion: reduce) {
   .scan-beam {
     animation: none;
-    left: 41%;
+    left: 50%;
   }
 
   *,
