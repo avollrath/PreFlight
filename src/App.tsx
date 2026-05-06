@@ -27,6 +27,18 @@ function App() {
     void window.preflight?.getStartupEnabled().then(setStartupEnabled);
   }, []);
 
+  useEffect(() => {
+    function handleDevUnlock(event: KeyboardEvent) {
+      if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === 'u') {
+        event.preventDefault();
+        unlock();
+      }
+    }
+
+    window.addEventListener('keydown', handleDevUnlock);
+    return () => window.removeEventListener('keydown', handleDevUnlock);
+  }, []);
+
   const completedCount = state.items.filter((item) => item.completed).length;
   const isComplete = completedCount === state.items.length;
   const progressLabel = `${completedCount} / ${state.items.length} complete`;
@@ -85,7 +97,10 @@ function App() {
     <main className="app-shell">
       <section className="preflight-panel" aria-labelledby="preflight-title">
         <div className="top-row">
-          <div className="eyebrow">MVP development mode</div>
+          <div>
+            <div className="eyebrow">MVP development mode</div>
+            <div className="shortcut-label">Ctrl+Shift+U unlocks during development</div>
+          </div>
           <button type="button" className="ghost-button" onClick={() => setShowSettings(true)}>
             Settings
           </button>

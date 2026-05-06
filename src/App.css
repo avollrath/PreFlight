@@ -36,6 +36,12 @@
   text-transform: uppercase;
 }
 
+.shortcut-label {
+  margin-top: 4px;
+  color: #87948f;
+  font-size: 0.85rem;
+}
+
 .app-name {
   margin: 18px 0 0;
   color: #f5f7f4;
