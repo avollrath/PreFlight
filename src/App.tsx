@@ -72,6 +72,16 @@ function App() {
   const completedCount = state.items.filter((item) => item.completed).length;
   const isComplete = completedCount === state.items.length;
   const progressLabel = `${completedCount} / ${state.items.length} complete`;
+  const modeEyebrow =
+    modeState.mode === 'edit'
+      ? 'Setup mode'
+      : // was: "Strict locked mode"
+        'Locked mode';
+  const modeSubtitle =
+    modeState.mode === 'edit'
+      ? "Edit your checklist below, then click Lock Now when you're ready to start."
+      : // was: "Complete every checklist item to unlock. Dev shortcuts are disabled."
+        'Complete every checklist item to unlock your desktop.';
 
   const progressWidth = useMemo(() => {
     if (state.items.length === 0) {
@@ -234,12 +244,10 @@ function App() {
           <div className="top-row">
             <div>
               <div className="eyebrow">
-                {modeState.mode === 'edit' ? 'Setup mode' : 'Strict locked mode'}
+                {modeEyebrow}
               </div>
               <div className="shortcut-label">
-                {modeState.mode === 'edit'
-                  ? "Edit your checklist below, then click Lock Now when you're ready to start."
-                  : 'Complete every checklist item to unlock. Dev shortcuts are disabled.'}
+                {modeSubtitle}
               </div>
             </div>
             <div className="top-actions">
