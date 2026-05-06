@@ -19,6 +19,7 @@ type StoreData = {
   completionsByDate: Record<string, string[]>;
   settings: {
     startOnStartupWake: boolean;
+    blockSecondaryScreens: boolean;
   };
 };
 
@@ -43,7 +44,8 @@ function createDefaultStore(): StoreData {
     items: defaultItems.map((text) => ({ id: randomUUID(), text })),
     completionsByDate: {},
     settings: {
-      startOnStartupWake: false
+      startOnStartupWake: false,
+      blockSecondaryScreens: true
     }
   };
 }
@@ -61,7 +63,8 @@ function readStore(): StoreData {
       items: parsed.items,
       completionsByDate: parsed.completionsByDate ?? {},
       settings: {
-        startOnStartupWake: parsed.settings?.startOnStartupWake ?? false
+        startOnStartupWake: parsed.settings?.startOnStartupWake ?? false,
+        blockSecondaryScreens: parsed.settings?.blockSecondaryScreens ?? true
       }
     };
   } catch {
