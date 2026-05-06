@@ -35,6 +35,7 @@ function App() {
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [draftItems, setDraftItems] = useState<DraftChecklistItem[]>(toDraftItems(fallbackItems));
   const [startupEnabled, setStartupEnabled] = useState(false);
+  const [blockSecondaryScreens, setBlockSecondaryScreens] = useState(true);
   const [modeState, setModeState] = useState<PreflightModeState>({
     mode: 'edit',
     locked: false,
@@ -57,6 +58,7 @@ function App() {
       }
     });
     void window.preflight?.getStartupEnabled().then(setStartupEnabled);
+    void window.electronAPI?.getBlockSecondaryScreens().then(setBlockSecondaryScreens);
   }, []);
 
   useEffect(() => {
@@ -209,6 +211,11 @@ function App() {
     void window.preflight?.setStartupEnabled(enabled).then(setStartupEnabled);
   }
 
+  function toggleBlockSecondaryScreens(enabled: boolean) {
+    setBlockSecondaryScreens(enabled);
+    void window.electronAPI?.setBlockSecondaryScreens(enabled).then(setBlockSecondaryScreens);
+  }
+
   if (showSettings) {
     return (
       <main className="app-shell settings-shell">
@@ -248,6 +255,25 @@ function App() {
               onChange={(event) => toggleStartup(event.target.checked)}
             />
             <span>Start PreFlight when Windows starts/wakes up</span>
+          </label>
+
+          <label
+            className="startup-toggle"
+            title="When enabled, PreFlight covers every connected screen during lock mode."
+          >
+            <input
+              id="block-secondary-screens-toggle"
+              type="checkbox"
+              checked={blockSecondaryScreens}
+              onChange={(event) => toggleBlockSecondaryScreens(event.target.checked)}
+            />
+            <span className="settings-toggle-copy">
+              <span>Block all screens when locked</span>
+              <span className="settings-toggle-description">
+                When off, only your main screen is blocked. Secondary screens stay usable (e.g. for
+                Spotify or reference material).
+              </span>
+            </span>
           </label>
 
           {/* Checklist editor: stable item IDs keep input focus steady while typing. */}
