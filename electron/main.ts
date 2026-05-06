@@ -467,18 +467,31 @@ function loadRenderer(window: BrowserWindowInstance) {
   void window.loadFile(rendererTarget);
 }
 
+function clampWindowedContentHeight(height: number) {
+  const workAreaHeight = screen.getPrimaryDisplay().workAreaSize.height;
+  const maxHeight = Math.floor(workAreaHeight * 0.9);
+  return Math.min(Math.max(Math.ceil(height), 600), maxHeight);
+}
+
+function getWindowedContentHeight() {
+  const checklistItemCount = getChecklistState().items.length;
+  const estimatedHeight = 120 + 30 + 120 + checklistItemCount * 70 + 80 + 40;
+  return clampWindowedContentHeight(estimatedHeight);
+}
+
 function createWindow(mode: AppMode = appMode) {
   Menu.setApplicationMenu(null);
   const primaryDisplayBounds = screen.getPrimaryDisplay().bounds;
   const shouldLockWindow = mode === 'locked' && isOverlayMode;
+  const windowedHeight = getWindowedContentHeight();
 
   const window = new BrowserWindow({
     x: shouldLockWindow ? primaryDisplayBounds.x : undefined,
     y: shouldLockWindow ? primaryDisplayBounds.y : undefined,
     width: shouldLockWindow ? primaryDisplayBounds.width : 1800,
-    height: shouldLockWindow ? primaryDisplayBounds.height : 1000,
+    height: shouldLockWindow ? primaryDisplayBounds.height : windowedHeight,
     minWidth: 900,
-    minHeight: 620,
+    minHeight: 600,
     title: 'PreFlight',
     icon: getLogoImage(),
     fullscreen: shouldLockWindow,
@@ -1042,6 +1055,30 @@ ipcMain.handle('preflight:set-startup-enabled', (_event, enabled: boolean) => {
   const saved = setStartOnStartupWakeEnabled(enabled);
   applyLoginItemSetting(saved);
   return saved;
+});
+
+ipcMain.on('resize-to-content', (event, payload: { height?: number }) => {
+  const window = BrowserWindow.fromWebContents(event.sender);
+
+  if (
+    !window ||
+    window !== mainWindow ||
+    appMode === 'locked' ||
+    locked ||
+    window.isDestroyed() ||
+    window.isFullScreen()
+  ) {
+    return;
+  }
+
+  const requestedHeight = Number(payload?.height);
+
+  if (!Number.isFinite(requestedHeight)) {
+    return;
+  }
+
+  const [currentWidth] = window.getSize();
+  window.setSize(currentWidth, clampWindowedContentHeight(requestedHeight));
 });
 
 app.on('will-quit', () => {

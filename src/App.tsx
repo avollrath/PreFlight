@@ -69,6 +69,16 @@ function App() {
     return () => window.removeEventListener('keydown', ignoreStrictDevShortcut);
   }, []);
 
+  useEffect(() => {
+    if (modeState.mode !== 'edit') {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      window.electronAPI?.resizeToContent(document.body.scrollHeight + 40);
+    });
+  }, [modeState.mode, showSettings, state.items, draftItems]);
+
   const completedCount = state.items.filter((item) => item.completed).length;
   const isComplete = completedCount === state.items.length;
   const progressLabel = `${completedCount} / ${state.items.length} complete`;

@@ -34,5 +34,8 @@ declare global {
       getStartupEnabled: () => Promise<boolean>;
       setStartupEnabled: (enabled: boolean) => Promise<boolean>;
     };
+    electronAPI?: {
+      resizeToContent: (height: number) => void;
+    };
   }
 }

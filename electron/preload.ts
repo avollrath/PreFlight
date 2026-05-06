@@ -14,3 +14,7 @@ contextBridge.exposeInMainWorld('preflight', {
   setStartupEnabled: (enabled: boolean) =>
     ipcRenderer.invoke('preflight:set-startup-enabled', enabled)
 });
+
+contextBridge.exposeInMainWorld('electronAPI', {
+  resizeToContent: (height: number) => ipcRenderer.send('resize-to-content', { height })
+});
