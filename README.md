@@ -7,6 +7,7 @@ This MVP is intentionally safe for development: the **Dev Unlock** button is alw
 ## Features
 
 - Fullscreen, frameless, always-on-top checklist overlay
+- Secondary monitor blocker overlays while locked
 - Dark 80s-inspired neon dashboard theme
 - Daily checklist completion state stored locally
 - Editable checklist items in the settings panel
@@ -29,7 +30,7 @@ npm install
 npm run dev
 ```
 
-`npm run dev` behaves like the real overlay. It opens fullscreen, stays always-on-top, uses a frameless window, blocks normal close while locked, and blocks `Alt+F4` while locked.
+`npm run dev` behaves like the real overlay. It opens fullscreen on the primary monitor, covers secondary monitors with blocker windows, stays always-on-top, uses frameless windows, blocks normal close while locked, and blocks `Alt+F4` while locked.
 
 The development escape routes are always available:
 
@@ -44,7 +45,7 @@ Use debug mode when you want a safer troubleshooting window with DevTools and ve
 npm run dev:debug
 ```
 
-`npm run dev:debug` uses a normal window instead of the locked fullscreen overlay.
+`npm run dev:debug` uses a normal primary-monitor window instead of the locked fullscreen multi-monitor overlay. It does not create secondary blocker windows, which makes it the safer troubleshooting mode.
 
 `npm run dev:safe` is kept as an alias for debug mode:
 

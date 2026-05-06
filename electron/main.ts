@@ -1,5 +1,6 @@
 import type {
   BrowserWindow as BrowserWindowInstance,
+  Display,
   Event as ElectronEvent,
   Input
 } from 'electron';
@@ -28,6 +29,7 @@ const isDebug = process.env.PREFLIGHT_DEV_DEBUG === '1';
 const isOverlayMode = !isDebug && (!isDev || process.env.PREFLIGHT_DEV_LOCKED === '1');
 
 let mainWindow: BrowserWindowInstance | null = null;
+const blockerWindows = new Map<number, BrowserWindowInstance>();
 let locked = isOverlayMode;
 
 function log(message: string, extra?: unknown) {
@@ -97,9 +99,76 @@ function fallbackHtml(message: string) {
   `)}`;
 }
 
+function blockerHtml() {
+  return `data:text/html;charset=utf-8,${encodeURIComponent(`
+    <!doctype html>
+    <html lang="en">
+      <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>PreFlight Blocker</title>
+        <style>
+          html,
+          body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            background:
+              repeating-linear-gradient(0deg, rgba(255, 23, 68, 0.035) 0 1px, transparent 1px 4px),
+              linear-gradient(rgba(255, 23, 68, 0.055) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(255, 23, 68, 0.045) 1px, transparent 1px),
+              radial-gradient(circle at 50% 0%, rgba(255, 23, 68, 0.15), transparent 38%),
+              linear-gradient(135deg, #050104 0%, #140309 45%, #000 100%);
+            background-size: auto, 42px 42px, 42px 42px, auto, auto;
+          }
+
+          body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            border: 1px solid rgba(255, 23, 68, 0.38);
+            box-shadow:
+              0 0 0 1px rgba(255, 23, 68, 0.08) inset,
+              0 0 44px rgba(255, 23, 68, 0.16) inset;
+            pointer-events: none;
+          }
+
+          body::after {
+            content: "";
+            position: fixed;
+            top: 12%;
+            left: -16%;
+            width: 18%;
+            height: 12px;
+            background: linear-gradient(90deg, transparent, rgba(255, 23, 68, 0.3), #ff1744, rgba(255, 23, 68, 0.3), transparent);
+            filter: blur(1px);
+            box-shadow: 0 0 20px #ff1744, 0 0 44px rgba(255, 23, 68, 0.24);
+            animation: scan 3.2s ease-in-out infinite alternate;
+          }
+
+          @keyframes scan {
+            from { transform: translateX(0); }
+            to { transform: translateX(720%); }
+          }
+
+          @media (prefers-reduced-motion: reduce) {
+            body::after {
+              animation: none;
+              left: 41%;
+            }
+          }
+        </style>
+      </head>
+      <body></body>
+    </html>
+  `)}`;
+}
+
 function emergencyUnlock() {
   log('Emergency unlock requested');
   locked = false;
+  closeBlockerWindows();
 
   if (isDev) {
     app.quit();
@@ -107,6 +176,14 @@ function emergencyUnlock() {
   }
 
   mainWindow?.hide();
+}
+
+function closeBlockerWindows() {
+  for (const blocker of blockerWindows.values()) {
+    blocker.destroy();
+  }
+
+  blockerWindows.clear();
 }
 
 function logWindowSafetyState() {
@@ -122,6 +199,16 @@ function logWindowSafetyState() {
     resizable: mainWindow.isResizable(),
     locked
   });
+
+  log(
+    'Display coverage state',
+    screen.getAllDisplays().map((display) => ({
+      id: display.id,
+      primary: display.id === screen.getPrimaryDisplay().id,
+      bounds: display.bounds,
+      hasBlocker: blockerWindows.has(display.id)
+    }))
+  );
 }
 
 function logRendererLayoutState() {
@@ -296,6 +383,7 @@ function createWindow() {
       mainWindow?.setBounds(primaryDisplayBounds);
       mainWindow?.setFullScreen(true);
       mainWindow?.setAlwaysOnTop(true, 'screen-saver');
+      syncOverlayWindows();
     }
 
     mainWindow?.focus();
@@ -310,12 +398,135 @@ function createWindow() {
   });
 }
 
+function createBlockerWindow(display: Display) {
+  const blocker = new BrowserWindow({
+    x: display.bounds.x,
+    y: display.bounds.y,
+    width: display.bounds.width,
+    height: display.bounds.height,
+    title: 'PreFlight Blocker',
+    fullscreen: true,
+    frame: false,
+    resizable: false,
+    movable: false,
+    minimizable: false,
+    maximizable: false,
+    alwaysOnTop: true,
+    autoHideMenuBar: true,
+    skipTaskbar: true,
+    backgroundColor: '#050104',
+    show: false,
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  });
+
+  blocker.setBounds(display.bounds);
+  blocker.setAlwaysOnTop(true, 'screen-saver');
+
+  blocker.on('close', (event: ElectronEvent) => {
+    if (locked) {
+      event.preventDefault();
+      blocker.show();
+      blocker.focus();
+    }
+  });
+
+  blocker.webContents.on('before-input-event', (event: ElectronEvent, input: Input) => {
+    const key = input.key.toLowerCase();
+
+    if (input.control && input.shift && key === 'u') {
+      event.preventDefault();
+      emergencyUnlock();
+      return;
+    }
+
+    if (locked && input.alt && key === 'f4') {
+      event.preventDefault();
+      blocker.focus();
+    }
+  });
+
+  blocker.once('ready-to-show', () => {
+    blocker.setBounds(display.bounds);
+    blocker.setFullScreen(true);
+    blocker.setAlwaysOnTop(true, 'screen-saver');
+    blocker.show();
+  });
+
+  void blocker.loadURL(blockerHtml());
+  blockerWindows.set(display.id, blocker);
+  log('Created secondary display blocker', { id: display.id, bounds: display.bounds });
+}
+
+function syncOverlayWindows() {
+  if (!isOverlayMode || !locked) {
+    return;
+  }
+
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const displays = screen.getAllDisplays();
+  const activeDisplayIds = new Set(displays.map((display) => display.id));
+
+  mainWindow?.setBounds(primaryDisplay.bounds);
+  mainWindow?.setFullScreen(true);
+  mainWindow?.setAlwaysOnTop(true, 'screen-saver');
+
+  for (const [displayId, blocker] of blockerWindows.entries()) {
+    if (!activeDisplayIds.has(displayId) || displayId === primaryDisplay.id) {
+      blocker.destroy();
+      blockerWindows.delete(displayId);
+    }
+  }
+
+  for (const display of displays) {
+    if (display.id === primaryDisplay.id) {
+      continue;
+    }
+
+    const blocker = blockerWindows.get(display.id);
+
+    if (blocker) {
+      blocker.setBounds(display.bounds);
+      blocker.setFullScreen(true);
+      blocker.setAlwaysOnTop(true, 'screen-saver');
+      blocker.show();
+      continue;
+    }
+
+    createBlockerWindow(display);
+  }
+}
+
+function registerDisplayHandlers() {
+  screen.on('display-added', () => {
+    log('Display added');
+    syncOverlayWindows();
+  });
+
+  screen.on('display-removed', () => {
+    log('Display removed');
+    syncOverlayWindows();
+  });
+
+  screen.on('display-metrics-changed', () => {
+    log('Display metrics changed');
+    syncOverlayWindows();
+  });
+}
+
 app.whenReady().then(() => {
   log(
     `Starting app. isPackaged=${app.isPackaged} isDev=${isDev} isDebug=${isDebug} isOverlayMode=${isOverlayMode}`
   );
   globalShortcut.register('CommandOrControl+Shift+U', emergencyUnlock);
+  registerDisplayHandlers();
   createWindow();
+
+  if (isOverlayMode) {
+    syncOverlayWindows();
+  }
 });
 
 ipcMain.handle('preflight:unlock', () => {
@@ -355,6 +566,7 @@ ipcMain.handle('preflight:set-startup-enabled', (_event, enabled: boolean) => {
 
 app.on('will-quit', () => {
   globalShortcut.unregisterAll();
+  closeBlockerWindows();
 });
 
 app.on('render-process-gone', (_event, webContents, details) => {
