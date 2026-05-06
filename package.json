@@ -2,6 +2,8 @@
   "name": "preflight",
   "private": true,
   "version": "0.0.0",
+  "description": "A Windows-first productivity checklist gate.",
+  "author": "PreFlight",
   "type": "module",
   "main": "dist-electron/main.js",
   "scripts": {
@@ -19,7 +21,9 @@
   "build": {
     "appId": "com.preflight.productivitygate",
     "productName": "PreFlight",
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "directories": {
+      "buildResources": "build",
       "output": "release"
     },
     "files": [
@@ -28,10 +32,16 @@
       "package.json"
     ],
     "win": {
+      "icon": "icon.ico",
       "target": [
         "nsis",
         "dir"
       ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
     }
   },
   "dependencies": {
