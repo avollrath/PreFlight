@@ -171,3 +171,25 @@ The MVP uses the reliable workstation unlock trigger. Wake-from-sleep event timi
 ## Safety Notes
 
 PreFlight does not install low-level keyboard hooks, block `Ctrl+Alt+Del`, replace Explorer, or use a separate Windows user. It is a normal desktop app with development escape hatches.
+
+## Lock Hardening
+
+PreFlight hardens locked mode with Electron user-space controls plus Windows shell suppression. While locked, it registers no-op handlers for `Alt+Tab`, `Alt+F4`, `Win+D`, `Win+L`, `Win+M`, `Win+Left`, `Win+Right`, `Win+Up`, `Win+Down`, `Win+Tab`, `Ctrl+Escape`, `Win+E`, and `Win+R`. These registrations are best-effort: Windows reserves some combinations before Electron can receive them, especially `Ctrl+Alt+Del`, the Windows key by itself, and workstation lock behavior such as `Win+L`.
+
+On Windows, PreFlight kills `explorer.exe` during locked mode to remove the taskbar, Start menu, desktop shell, and shell launch surfaces. Explorer is restored when the checklist unlocks, when lock mode exits, and from app exit handlers such as `before-quit`, `will-quit`, `SIGTERM`, process exit, and uncaught exception handling. Explorer control is skipped on non-Windows platforms.
+
+The primary lock window uses blur recapture after 50ms and a 200ms focus enforcement interval. The interval calls `focus()` and `moveTop()` when the primary lock window loses focus, which helps recover from task switching, z-order changes, and compositor edge cases that are not covered by a single blur event.
+
+Monitor bounds are clamped while locked. The primary lock window is reset to the primary display bounds if moved or resized, and every secondary blocker window is reset to its assigned display bounds. This counters window snapping and `Win+Arrow` movement when Electron or Windows allows a move event through.
+
+| Surface | Electron User-Space Status | Notes |
+| --- | --- | --- |
+| `Alt+F4` | Blockable | Handled with global shortcuts and renderer input interception. |
+| `Alt+Tab` | Best-effort | Electron can register it on some systems, but Windows may reserve it. |
+| `Win+Arrow` | Best-effort plus clamped | Shortcut registration is best-effort; move events are corrected by bounds clamping. |
+| `Win+D`, `Win+M`, `Win+Tab`, `Ctrl+Escape`, `Win+E`, `Win+R` | Best-effort | Registered while locked and paired with Explorer shutdown where applicable. |
+| Taskbar and Start menu | Suppressed on Windows | `explorer.exe` is killed during lock and restored afterward. |
+| `Ctrl+Alt+Del` | Not blockable | Secure attention sequence is reserved by Windows. |
+| Windows key alone | Not reliably blockable | Reserved shell behavior; user-space Electron apps should not depend on intercepting it. |
+| `Win+L` | Not reliably blockable | Workstation locking is OS-reserved on many Windows configurations. |
+| Power button, firmware keys, external admin tools | Not blockable | Requires OS policy, kiosk configuration, or hardware/MDM controls outside Electron. |
