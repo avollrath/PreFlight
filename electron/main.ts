@@ -288,7 +288,7 @@ function logRendererLayoutState() {
           scrollHeight: document.querySelector('.dashboard-content')?.scrollHeight,
           clientHeight: document.querySelector('.dashboard-content')?.clientHeight
         },
-        settingsOpen: Boolean(document.querySelector('.settings-panel'))
+        settingsOpen: Boolean(document.querySelector('.settings-view'))
       })`
     )
     .then((layout) => log('Renderer layout state', layout))

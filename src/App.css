@@ -57,7 +57,7 @@
 }
 
 .dashboard-content::-webkit-scrollbar,
-.settings-panel::-webkit-scrollbar {
+.settings-view::-webkit-scrollbar {
   width: 0;
   height: 0;
 }
@@ -329,21 +329,20 @@ button:focus-visible,
   box-shadow: none;
 }
 
-.settings-backdrop {
-  position: fixed;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  padding: 24px;
-  background:
-    repeating-linear-gradient(0deg, rgba(255, 23, 68, 0.035) 0 1px, transparent 1px 5px),
-    rgba(8, 0, 3, 0.88);
+/* Full-window settings surface: replaces the checklist instead of floating over it. */
+.settings-shell {
+  align-items: stretch;
+  justify-items: center;
 }
 
-.settings-panel {
-  width: min(1200px, calc(100vw - 96px));
+.settings-view {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: 22px;
+  width: min(1400px, calc(100vw - 96px));
   max-width: 100%;
-  max-height: calc(100vh - 48px);
+  height: calc(100vh - clamp(40px, 6vw, 96px));
+  max-height: 100%;
   overflow-x: hidden;
   overflow-y: auto;
   scrollbar-width: none;
@@ -357,14 +356,40 @@ button:focus-visible,
     0 24px 80px rgba(0, 0, 0, 0.7);
 }
 
+/* Header and description: prominent title with quieter helper copy. */
 .settings-kicker {
   margin: 0 0 6px;
 }
 
+.settings-title {
+  margin: 0;
+  font-size: clamp(2.5rem, 6vw, 5.2rem);
+}
+
+.settings-description {
+  max-width: 760px;
+  margin: 12px 0 0;
+  color: #d99aa8;
+  font-size: clamp(0.94rem, 1.5vw, 1.08rem);
+  line-height: 1.55;
+  letter-spacing: 0.04em;
+}
+
+/* Checklist editor: a vertical set of stable rows with remove controls on the right. */
 .settings-list {
   display: grid;
+  align-content: start;
   gap: 10px;
-  margin: 24px 0;
+  min-height: 0;
+  margin: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.settings-list::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
 .startup-toggle {
@@ -401,6 +426,11 @@ button:focus-visible,
   box-shadow: 0 0 16px var(--accent-soft);
 }
 
+/* Footer actions: add stays secondary, save remains the primary command. */
+.settings-actions {
+  padding-top: 4px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .scan-beam {
     animation: none;
@@ -424,6 +454,12 @@ button:focus-visible,
     width: 100%;
     max-height: calc(100vh - 32px);
     padding: 24px;
+  }
+
+  .settings-view {
+    width: 100%;
+    height: calc(100vh - 32px);
+    padding: 22px;
   }
 
   .dashboard-content {

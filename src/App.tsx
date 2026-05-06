@@ -119,11 +119,6 @@ function App() {
   }
 
   function openSettings() {
-    if (modeState.mode === 'locked') {
-      enterSetupMode();
-      return;
-    }
-
     setShowSettings(true);
   }
 
@@ -152,6 +147,71 @@ function App() {
   function toggleStartup(enabled: boolean) {
     setStartupEnabled(enabled);
     void window.preflight?.setStartupEnabled(enabled).then(setStartupEnabled);
+  }
+
+  if (showSettings) {
+    return (
+      <main className="app-shell settings-shell">
+        <section className="settings-view" aria-labelledby="settings-title">
+          {/* Header: identifies the settings area and provides a clear return action. */}
+          <header className="settings-header">
+            <div>
+              <p className="settings-kicker">Local checklist</p>
+              <h1 id="settings-title" className="settings-title">
+                Settings
+              </h1>
+              <p className="settings-description">
+                Add the tasks you want to complete before you start using your computer.
+              </p>
+            </div>
+            <button type="button" className="ghost-button" onClick={() => setShowSettings(false)}>
+              Close
+            </button>
+          </header>
+
+          {/* Options: startup behavior stays editable from the full-window settings view. */}
+          <label className="startup-toggle">
+            <input
+              type="checkbox"
+              checked={startupEnabled}
+              onChange={(event) => toggleStartup(event.target.checked)}
+            />
+            <span>Start PreFlight when Windows starts</span>
+          </label>
+
+          {/* Checklist editor: stable item IDs keep input focus steady while typing. */}
+          <div className="settings-list" aria-label="Editable checklist items">
+            {draftItems.map((item, index) => (
+              <div className="settings-item" key={item.id}>
+                <input
+                  value={item.text}
+                  aria-label={`Checklist item ${index + 1}`}
+                  onChange={(event) => updateDraftItem(item.id, event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.currentTarget.blur();
+                    }
+                  }}
+                />
+                <button type="button" className="ghost-button" onClick={() => removeDraftItem(item.id)}>
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* Footer actions: add new rows on the left, save the checklist on the right. */}
+          <footer className="settings-actions">
+            <button type="button" className="ghost-button" onClick={addDraftItem}>
+              Add item
+            </button>
+            <button type="button" onClick={saveSettings}>
+              Save checklist
+            </button>
+          </footer>
+        </section>
+      </main>
+    );
   }
 
   return (
@@ -226,64 +286,6 @@ function App() {
             </button>
           </div>
         </div>
-
-        {showSettings && (
-          <div className="settings-backdrop" role="presentation">
-            <section className="settings-panel" aria-label="Checklist settings">
-              <div className="settings-header">
-                <div>
-                  <p className="settings-kicker">Local checklist</p>
-                  <h2>Settings</h2>
-                </div>
-                <button
-                  type="button"
-                  className="ghost-button"
-                  onClick={() => setShowSettings(false)}
-                >
-                  Close
-                </button>
-              </div>
-
-              <div className="settings-list">
-                <label className="startup-toggle">
-                  <input
-                    type="checkbox"
-                    checked={startupEnabled}
-                    onChange={(event) => toggleStartup(event.target.checked)}
-                  />
-                  <span>Start PreFlight when Windows starts</span>
-                </label>
-
-                {draftItems.map((item, index) => (
-                  <div className="settings-item" key={item.id}>
-                    <input
-                      value={item.text}
-                      aria-label={`Checklist item ${index + 1}`}
-                      onChange={(event) => updateDraftItem(item.id, event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter') {
-                          event.currentTarget.blur();
-                        }
-                      }}
-                    />
-                    <button type="button" className="ghost-button" onClick={() => removeDraftItem(item.id)}>
-                      Remove
-                    </button>
-                  </div>
-                ))}
-              </div>
-
-              <div className="settings-actions">
-                <button type="button" className="ghost-button" onClick={addDraftItem}>
-                  Add item
-                </button>
-                <button type="button" onClick={saveSettings}>
-                  Save checklist
-                </button>
-              </div>
-            </section>
-          </div>
-        )}
       </section>
     </main>
   );
