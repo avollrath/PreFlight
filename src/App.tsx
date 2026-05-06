@@ -122,6 +122,10 @@ function App() {
           </button>
         </div>
 
+        <div className="scan-bar" aria-hidden="true">
+          <div className="scan-beam" />
+        </div>
+
         <p className="app-name">PreFlight</p>
         <h1 id="preflight-title">Before you start</h1>
         <p className="lede">Complete your checklist to unlock your desktop.</p>

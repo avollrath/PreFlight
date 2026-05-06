@@ -20,12 +20,14 @@ const {
 
 const isDev =
   process.env.PREFLIGHT_DEV_SAFE === '1' ||
+  process.env.PREFLIGHT_DEV_LOCKED === '1' ||
   Boolean(process.env.VITE_DEV_SERVER_URL) ||
   !app.isPackaged;
 const isDebug = process.env.PREFLIGHT_DEV_DEBUG === '1';
+const isOverlayMode = !isDebug && (!isDev || process.env.PREFLIGHT_DEV_LOCKED === '1');
 
 let mainWindow: BrowserWindowInstance | null = null;
-let locked = !isDev;
+let locked = isOverlayMode;
 
 function log(message: string, extra?: unknown) {
   if (extra === undefined) {
@@ -125,18 +127,18 @@ function createWindow() {
   Menu.setApplicationMenu(null);
 
   mainWindow = new BrowserWindow({
-    width: isDev ? 1800 : 1280,
-    height: isDev ? 1000 : 800,
+    width: isOverlayMode ? 1280 : 1800,
+    height: isOverlayMode ? 800 : 1000,
     minWidth: 900,
     minHeight: 620,
     title: 'PreFlight',
-    fullscreen: !isDev,
-    frame: isDev,
-    resizable: isDev,
-    alwaysOnTop: !isDev,
+    fullscreen: isOverlayMode,
+    frame: !isOverlayMode,
+    resizable: !isOverlayMode,
+    alwaysOnTop: isOverlayMode,
     autoHideMenuBar: true,
     backgroundColor: '#101418',
-    show: isDev,
+    show: !isOverlayMode,
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
@@ -144,12 +146,12 @@ function createWindow() {
     }
   });
 
-  if (!isDev) {
+  if (isOverlayMode) {
     mainWindow.setAlwaysOnTop(true, 'screen-saver');
   }
 
   mainWindow.on('close', (event: ElectronEvent) => {
-    if (locked && !isDev) {
+    if (locked) {
       event.preventDefault();
       mainWindow?.show();
       mainWindow?.focus();
@@ -157,7 +159,7 @@ function createWindow() {
   });
 
   mainWindow.on('blur', () => {
-    if (locked && !isDev) {
+    if (locked) {
       setTimeout(() => {
         mainWindow?.show();
         mainWindow?.focus();
@@ -174,7 +176,7 @@ function createWindow() {
       return;
     }
 
-    if (locked && !isDev && input.alt && key === 'f4') {
+    if (locked && input.alt && key === 'f4') {
       event.preventDefault();
       mainWindow?.focus();
     }
@@ -219,7 +221,7 @@ function createWindow() {
     void mainWindow.loadFile(rendererTarget);
   }
 
-  if (isDev) {
+  if (!isOverlayMode) {
     mainWindow.show();
     mainWindow.focus();
 
@@ -232,13 +234,13 @@ function createWindow() {
   mainWindow.once('ready-to-show', () => {
     mainWindow?.show();
 
-    if (!isDev) {
+    if (isOverlayMode) {
       mainWindow?.setFullScreen(true);
     }
 
     mainWindow?.focus();
 
-    if (isDebug) {
+    if (isDebug || isOverlayMode) {
       logWindowSafetyState();
     }
 
@@ -249,7 +251,9 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
-  log(`Starting app. isPackaged=${app.isPackaged} isDev=${isDev} isDebug=${isDebug}`);
+  log(
+    `Starting app. isPackaged=${app.isPackaged} isDev=${isDev} isDebug=${isDebug} isOverlayMode=${isOverlayMode}`
+  );
   globalShortcut.register('CommandOrControl+Shift+U', emergencyUnlock);
   createWindow();
 });

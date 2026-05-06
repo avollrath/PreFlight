@@ -7,6 +7,7 @@ This MVP is intentionally safe for development: the **Dev Unlock** button is alw
 ## Features
 
 - Fullscreen, frameless, always-on-top checklist overlay
+- Dark 80s-inspired neon dashboard theme
 - Daily checklist completion state stored locally
 - Editable checklist items in the settings panel
 - Unlock button enabled only when every item is complete
@@ -28,21 +29,30 @@ npm install
 npm run dev
 ```
 
-`npm run dev` uses safe development mode. It opens a normal `1800x1000` resizable window, does not use fullscreen, does not stay always-on-top, and does not block close.
+`npm run dev` behaves like the real overlay. It opens fullscreen, stays always-on-top, uses a frameless window, blocks normal close while locked, and blocks `Alt+F4` while locked.
 
-You can also run the safe script explicitly:
+The development escape routes are always available:
 
-```bash
-npm run dev:safe
-```
+- Click **Dev Unlock**
+- Press `Ctrl+Shift+U`
 
-Use debug mode when you want DevTools and verbose renderer diagnostics:
+The keyboard shortcut is handled in the Electron main process, so it still works if React fails to load.
+
+Use debug mode when you want a safer troubleshooting window with DevTools and verbose renderer diagnostics:
 
 ```bash
 npm run dev:debug
 ```
 
-During MVP development, use **Dev Unlock** or `Ctrl+Shift+U` if the window is in your way. The shortcut is handled in the Electron main process, so it still works if React fails to load.
+`npm run dev:debug` uses a normal window instead of the locked fullscreen overlay.
+
+`npm run dev:safe` is kept as an alias for debug mode:
+
+```bash
+npm run dev:safe
+```
+
+The UI uses an 80s neon dashboard style with the Electrolize font, green system-status controls, terminal-like panels, and a lightweight animated scan bar.
 
 ## Build And Run
 
@@ -87,18 +97,18 @@ Remove-Item "$env:APPDATA\PreFlight" -Recurse -Force
 
 ## Diagnostics
 
-If PreFlight opens black in development, press `Ctrl+Shift+U` first. Safe dev mode should quit immediately even if the renderer is broken.
-
-Launch safe mode:
-
-```bash
-npm run dev:safe
-```
+If PreFlight opens black in development, press `Ctrl+Shift+U` first. It should quit immediately even if the renderer is broken.
 
 Launch debug mode:
 
 ```bash
 npm run dev:debug
+```
+
+Launch the debug alias:
+
+```bash
+npm run dev:safe
 ```
 
 Logs are printed in the terminal running the dev command. Normal dev logs the app startup and renderer target. Debug mode also logs renderer console messages, renderer load completion, and the development window safety state.
