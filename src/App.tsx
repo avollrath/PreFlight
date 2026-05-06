@@ -17,12 +17,14 @@ function App() {
   });
   const [showSettings, setShowSettings] = useState(false);
   const [draftItems, setDraftItems] = useState(fallbackItems.map((item) => item.text));
+  const [startupEnabled, setStartupEnabled] = useState(false);
 
   useEffect(() => {
     void window.preflight?.getState().then((nextState) => {
       setState(nextState);
       setDraftItems(nextState.items.map((item) => item.text));
     });
+    void window.preflight?.getStartupEnabled().then(setStartupEnabled);
   }, []);
 
   const completedCount = state.items.filter((item) => item.completed).length;
@@ -72,6 +74,11 @@ function App() {
       setDraftItems(nextState.items.map((item) => item.text));
       setShowSettings(false);
     });
+  }
+
+  function toggleStartup(enabled: boolean) {
+    setStartupEnabled(enabled);
+    void window.preflight?.setStartupEnabled(enabled).then(setStartupEnabled);
   }
 
   return (
@@ -139,6 +146,15 @@ function App() {
               </div>
 
               <div className="settings-list">
+                <label className="startup-toggle">
+                  <input
+                    type="checkbox"
+                    checked={startupEnabled}
+                    onChange={(event) => toggleStartup(event.target.checked)}
+                  />
+                  <span>Start PreFlight when Windows starts</span>
+                </label>
+
                 {draftItems.map((item, index) => (
                   <div className="settings-item" key={`${index}-${item}`}>
                     <input

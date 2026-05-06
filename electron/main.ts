@@ -89,6 +89,17 @@ ipcMain.handle('preflight:set-completion', (_event, itemId: string, completed: b
 
 ipcMain.handle('preflight:save-items', (_event, texts: string[]) => saveChecklistItems(texts));
 
+ipcMain.handle('preflight:get-startup-enabled', () => app.getLoginItemSettings().openAtLogin);
+
+ipcMain.handle('preflight:set-startup-enabled', (_event, enabled: boolean) => {
+  app.setLoginItemSettings({
+    openAtLogin: enabled,
+    path: process.execPath
+  });
+
+  return app.getLoginItemSettings().openAtLogin;
+});
+
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();

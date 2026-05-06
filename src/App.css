@@ -186,6 +186,25 @@ h2 {
   margin: 24px 0;
 }
 
+.startup-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  margin-bottom: 8px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: #eef2ee;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.startup-toggle input {
+  width: 20px;
+  height: 20px;
+  accent-color: #70d7a7;
+}
+
 .settings-item {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
