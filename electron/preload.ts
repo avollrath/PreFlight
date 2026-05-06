@@ -16,5 +16,8 @@ contextBridge.exposeInMainWorld('preflight', {
 });
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  resizeToContent: (height: number) => ipcRenderer.send('resize-to-content', { height })
+  resizeToContent: (height: number) => ipcRenderer.send('resize-to-content', { height }),
+  getBlockSecondaryScreens: () => ipcRenderer.invoke('get-block-secondary-screens'),
+  setBlockSecondaryScreens: (value: boolean) =>
+    ipcRenderer.invoke('set-block-secondary-screens', value)
 });

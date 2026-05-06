@@ -8,9 +8,11 @@ import type {
 } from 'electron';
 import path from 'node:path';
 import {
+  getBlockSecondaryScreensEnabled,
   getChecklistState,
   getStartOnStartupWakeEnabled,
   saveChecklistItems,
+  setBlockSecondaryScreensEnabled,
   setStartOnStartupWakeEnabled,
   setChecklistItemCompletion
 } from './store.js';
@@ -1054,6 +1056,24 @@ ipcMain.handle('preflight:set-startup-enabled', (_event, enabled: boolean) => {
 
   const saved = setStartOnStartupWakeEnabled(enabled);
   applyLoginItemSetting(saved);
+  return saved;
+});
+
+ipcMain.handle('get-block-secondary-screens', () => {
+  return getBlockSecondaryScreensEnabled();
+});
+
+ipcMain.handle('set-block-secondary-screens', (_event, enabled: boolean) => {
+  const saved = setBlockSecondaryScreensEnabled(Boolean(enabled));
+
+  if (locked && appMode === 'locked') {
+    if (saved) {
+      syncOverlayWindows({ forceRepaint: true });
+    } else {
+      closeBlockerWindows();
+    }
+  }
+
   return saved;
 });
 

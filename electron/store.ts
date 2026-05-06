@@ -139,3 +139,14 @@ export function setStartOnStartupWakeEnabled(enabled: boolean) {
   writeStore(data);
   return data.settings.startOnStartupWake;
 }
+
+export function getBlockSecondaryScreensEnabled() {
+  return readStore().settings.blockSecondaryScreens;
+}
+
+export function setBlockSecondaryScreensEnabled(enabled: boolean) {
+  const data = readStore();
+  data.settings.blockSecondaryScreens = enabled;
+  writeStore(data);
+  return data.settings.blockSecondaryScreens;
+}

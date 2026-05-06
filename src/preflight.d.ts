@@ -36,6 +36,8 @@ declare global {
     };
     electronAPI?: {
       resizeToContent: (height: number) => void;
+      getBlockSecondaryScreens: () => Promise<boolean>;
+      setBlockSecondaryScreens: (value: boolean) => Promise<boolean>;
     };
   }
 }
