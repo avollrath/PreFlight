@@ -23,6 +23,8 @@ const blockedShortcuts = [
   'Super+Tab'
 ];
 
+export let explorerWasKilled = false;
+
 /**
  * Registers no-op global shortcut handlers for common Windows task-switching
  * and shell shortcuts during lock mode.
@@ -138,12 +140,18 @@ export function enforceMonitorBounds(win: BrowserWindowInstance, display: Displa
  * checklist lock is active.
  */
 export function killExplorer() {
+  if (process.platform !== 'win32') {
+    console.log('[PreFlight] Skipped killing Explorer on non-Windows platform');
+    return;
+  }
+
   exec('taskkill /f /im explorer.exe', (error, stdout, stderr) => {
     if (error) {
       console.error('[PreFlight] Failed to kill Explorer', { error, stderr });
       return;
     }
 
+    explorerWasKilled = true;
     console.log('[PreFlight] Explorer killed', stdout);
   });
 }
@@ -152,12 +160,18 @@ export function killExplorer() {
  * Restarts Windows Explorer after lock mode ends or the app exits.
  */
 export function restoreExplorer() {
+  if (process.platform !== 'win32') {
+    console.log('[PreFlight] Skipped restoring Explorer on non-Windows platform');
+    return;
+  }
+
   exec('start explorer.exe', (error, stdout, stderr) => {
     if (error) {
       console.error('[PreFlight] Failed to restore Explorer', { error, stderr });
       return;
     }
 
+    explorerWasKilled = false;
     console.log('[PreFlight] Explorer restored', stdout);
   });
 }

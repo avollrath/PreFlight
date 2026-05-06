@@ -17,6 +17,7 @@ import {
 import {
   enforceMonitorBounds,
   enforcePrimaryMonitorBounds,
+  explorerWasKilled,
   killExplorer,
   registerBlockedShortcuts,
   restoreExplorer,
@@ -282,6 +283,15 @@ function deactivateLockModeHardening(reason: string) {
   registerEmergencyUnlockShortcut();
   restoreExplorer();
   log(`Lock mode hardening deactivated: ${reason}`);
+}
+
+function restoreExplorerIfKilled(reason: string) {
+  if (!explorerWasKilled) {
+    return;
+  }
+
+  log(`Restoring Explorer: ${reason}`);
+  restoreExplorer();
 }
 
 function getLogoPath() {
@@ -1035,7 +1045,7 @@ app.on('will-quit', () => {
   stopLockFocusEnforcement?.();
   stopLockFocusEnforcement = null;
   unregisterBlockedShortcuts(globalShortcut);
-  restoreExplorer();
+  restoreExplorerIfKilled('will quit');
   releaseDisplaySleepBlocker('will quit');
   closeBlockerWindows();
   tray?.destroy();
@@ -1043,7 +1053,7 @@ app.on('will-quit', () => {
 });
 
 app.on('before-quit', () => {
-  restoreExplorer();
+  restoreExplorerIfKilled('before quit');
 });
 
 app.on('render-process-gone', (_event, webContents, details) => {
@@ -1077,15 +1087,15 @@ app.on('window-all-closed', () => {
 });
 
 process.on('exit', () => {
-  restoreExplorer();
+  restoreExplorerIfKilled('process exit');
 });
 
 process.on('SIGTERM', () => {
-  restoreExplorer();
+  restoreExplorerIfKilled('SIGTERM');
   process.exit(0);
 });
 
 process.on('uncaughtException', (error) => {
-  restoreExplorer();
+  restoreExplorerIfKilled('uncaught exception');
   throw error;
 });
