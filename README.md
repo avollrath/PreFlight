@@ -42,6 +42,8 @@ The development escape routes are always available:
 
 Both escape routes close the primary overlay, close secondary blockers, and leave PreFlight running in the tray. Use the tray menu's **Open Edit Mode** item to reopen setup mode. The keyboard shortcut is handled in the Electron main process, so it still works if React fails to load.
 
+While locked, PreFlight uses kiosk windows, always-on-top overlays, focus reinforcement, and best-effort Electron shortcut registration for common task-switching shortcuts such as `Alt+Tab` and `Win+Arrow`. Some Windows-reserved keys may require OS kiosk policy to block completely; PreFlight intentionally avoids invasive low-level keyboard hooks.
+
 Use **Setup mode** or **Settings** to edit checklist items. Saving checklist changes stays in setup mode. Use **Lock now** when you want to return to the fullscreen overlay and secondary monitor blockers. Setup mode is not persisted; a fresh app launch starts in edit mode with Settings open unless **Start PreFlight when Windows starts/wakes up** is enabled.
 
 PreFlight also adds a system tray icon using the app logo. Its tooltip is **PreFlight**, and its menu includes **Open Edit Mode**, **Lock Now**, and **Quit**.

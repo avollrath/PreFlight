@@ -43,12 +43,24 @@ type OverlaySyncOptions = {
   forceRepaint?: boolean;
   recreateBlockers?: boolean;
 };
+const lockShortcutAccelerators = [
+  'Alt+Tab',
+  'Alt+Shift+Tab',
+  'Super+Tab',
+  'Super+Left',
+  'Super+Right',
+  'Super+Up',
+  'Super+Down',
+  'Super+D',
+  'Super+M'
+];
 
 let appMode: AppMode = 'edit';
 let locked = false;
 let isRecreatingMainWindow = false;
 let isQuitting = false;
 let openSettingsOnNextLoad = true;
+const registeredLockShortcuts = new Set<string>();
 
 function log(message: string, extra?: unknown) {
   if (extra === undefined) {
@@ -173,6 +185,49 @@ function closeBlockerWindows() {
   }
 
   blockerWindows.clear();
+}
+
+function reinforceLockedOverlay(reason: string) {
+  if (!locked || appMode !== 'locked') {
+    return;
+  }
+
+  log(`Reinforcing locked overlay: ${reason}`);
+  syncOverlayWindows({ forceRepaint: true });
+  mainWindow?.show();
+  mainWindow?.setFullScreen(true);
+  mainWindow?.setKiosk(true);
+  mainWindow?.setAlwaysOnTop(true, 'screen-saver');
+  mainWindow?.focus();
+}
+
+function registerLockShortcutBlockers() {
+  for (const accelerator of lockShortcutAccelerators) {
+    if (registeredLockShortcuts.has(accelerator)) {
+      continue;
+    }
+
+    const registered = globalShortcut.register(accelerator, () => {
+      reinforceLockedOverlay(`blocked shortcut ${accelerator}`);
+    });
+
+    if (registered) {
+      registeredLockShortcuts.add(accelerator);
+      continue;
+    }
+
+    // Windows reserves some shortcuts before Electron sees them. Those need OS kiosk
+    // policy or a native hook; PreFlight avoids invasive low-level hooks for safety.
+    debugLog(`Could not register lock shortcut blocker: ${accelerator}`);
+  }
+}
+
+function unregisterLockShortcutBlockers() {
+  for (const accelerator of registeredLockShortcuts) {
+    globalShortcut.unregister(accelerator);
+  }
+
+  registeredLockShortcuts.clear();
 }
 
 function getLogoPath() {
@@ -363,6 +418,7 @@ function createWindow(mode: AppMode = appMode) {
     icon: getLogoImage(),
     fullscreen: shouldLockWindow,
     frame: !shouldLockWindow,
+    kiosk: shouldLockWindow,
     resizable: !shouldLockWindow,
     alwaysOnTop: shouldLockWindow,
     autoHideMenuBar: true,
@@ -384,6 +440,7 @@ function createWindow(mode: AppMode = appMode) {
 
   if (shouldLockWindow) {
     window.setBounds(primaryDisplayBounds);
+    window.setKiosk(true);
     window.setAlwaysOnTop(true, 'screen-saver');
   }
 
@@ -474,6 +531,7 @@ function createWindow(mode: AppMode = appMode) {
     if (shouldLockWindow) {
       window.setBounds(primaryDisplayBounds);
       window.setFullScreen(true);
+      window.setKiosk(true);
       window.setAlwaysOnTop(true, 'screen-saver');
       syncOverlayWindows();
     }
@@ -507,6 +565,7 @@ function enterEditMode(reason: string, openSettings = true) {
   appMode = 'edit';
   locked = false;
   openSettingsOnNextLoad = openSettings;
+  unregisterLockShortcutBlockers();
   closeBlockerWindows();
   log(`Entering edit mode: ${reason}`);
 
@@ -515,6 +574,7 @@ function enterEditMode(reason: string, openSettings = true) {
       mainWindow.setFullScreen(false);
     }
 
+    mainWindow.setKiosk(false);
     mainWindow.setAlwaysOnTop(false);
   }
 
@@ -526,6 +586,7 @@ function unlockToTray(reason: string) {
   appMode = 'edit';
   locked = false;
   openSettingsOnNextLoad = false;
+  unregisterLockShortcutBlockers();
   closeBlockerWindows();
 
   if (mainWindow && !mainWindow.isDestroyed()) {
@@ -543,10 +604,13 @@ function enterLockedMode(reason: string, options: OverlaySyncOptions = {}) {
   log(`Entering ${appMode} mode: ${reason}`);
 
   if (!isOverlayMode) {
+    unregisterLockShortcutBlockers();
     closeBlockerWindows();
     recreateMainWindow('edit');
     return;
   }
+
+  registerLockShortcutBlockers();
 
   if (options.recreateBlockers) {
     closeBlockerWindows();
@@ -591,6 +655,8 @@ function createBlockerWindow(display: Display) {
     title: 'PreFlight Blocker',
     fullscreen: false,
     frame: false,
+    focusable: true,
+    kiosk: true,
     resizable: false,
     movable: false,
     minimizable: false,
@@ -674,6 +740,7 @@ function forceBlockerVisible(
 
   blocker.setBounds(display.bounds);
   blocker.setFullScreen(true);
+  blocker.setKiosk(true);
   blocker.setBounds(display.bounds);
   blocker.setAlwaysOnTop(true, 'screen-saver');
   blocker.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
@@ -755,7 +822,8 @@ function scheduleOverlayRefreshes(reason: string, options: OverlaySyncOptions = 
 function registerDisplayHandlers() {
   screen.on('display-added', () => {
     log('Display added');
-    syncOverlayWindows();
+    syncOverlayWindows({ forceRepaint: true });
+    scheduleOverlayRefreshes('display added', { forceRepaint: true });
   });
 
   screen.on('display-removed', () => {
@@ -765,7 +833,8 @@ function registerDisplayHandlers() {
 
   screen.on('display-metrics-changed', () => {
     log('Display metrics changed');
-    syncOverlayWindows();
+    syncOverlayWindows({ forceRepaint: true });
+    scheduleOverlayRefreshes('display metrics changed', { forceRepaint: true });
   });
 }
 
@@ -776,6 +845,11 @@ app.whenReady().then(() => {
     `Starting app. isPackaged=${app.isPackaged} isDev=${isDev} isDebug=${isDebug} isOverlayMode=${isOverlayMode} appMode=${appMode}`
   );
   globalShortcut.register('CommandOrControl+Shift+U', emergencyUnlock);
+
+  if (locked) {
+    registerLockShortcutBlockers();
+  }
+
   registerDisplayHandlers();
   createTray();
   createWindow(appMode);
