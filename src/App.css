@@ -172,21 +172,38 @@
     0 0 60px 12px rgba(180, 0, 0, 0.2),
     0 0 100px 20px rgba(150, 0, 0, 0.1);
   transform: translateY(-50%);
-  animation: scan-sweep 3.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation: scanSweep 3.5s linear infinite;
 }
 
 .scan-bar.is-idle .scan-beam {
   animation:
-    scan-sweep 3.5s cubic-bezier(0.4, 0, 0.6, 1) infinite,
+    scanSweep 3.5s linear infinite,
     scanPulse 4s ease-in-out infinite;
 }
 
-@keyframes scan-sweep {
-  from {
+@keyframes scanSweep {
+  0% {
     left: -120px;
+    opacity: 1;
   }
-  to {
+
+  85% {
+    opacity: 1;
+  }
+
+  98% {
     left: calc(100% + 120px);
+    opacity: 0;
+  }
+
+  99% {
+    left: -120px;
+    opacity: 0;
+  }
+
+  100% {
+    left: -120px;
+    opacity: 1;
   }
 }
 
