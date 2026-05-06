@@ -22,6 +22,7 @@ const {
   ipcMain,
   Menu,
   nativeImage,
+  powerSaveBlocker,
   powerMonitor,
   screen,
   Tray
@@ -61,7 +62,8 @@ let locked = false;
 let isRecreatingMainWindow = false;
 let isQuitting = false;
 let openSettingsOnNextLoad = true;
-let lockedSessionStartedIncomplete = false;
+let lockedSessionHasSeenIncomplete = false;
+let displaySleepBlockerId: number | null = null;
 const registeredLockShortcuts = new Set<string>();
 
 function log(message: string, extra?: unknown) {
@@ -243,18 +245,51 @@ function isChecklistComplete(state = getChecklistState()) {
   return state.items.length > 0 && state.items.every((item) => item.completed);
 }
 
-function maybeUnlockCompletedChecklist(reason: string, state = getChecklistState()) {
-  if (
-    !locked ||
-    appMode !== 'locked' ||
-    !lockedSessionStartedIncomplete ||
-    !isChecklistComplete(state)
-  ) {
+function trackLockedChecklistState(state = getChecklistState()) {
+  if (!locked || appMode !== 'locked') {
+    return;
+  }
+
+  // Manual lock reopen can start with an already-complete checklist. Only
+  // auto-unlock after this locked session has actually observed incomplete work.
+  if (!isChecklistComplete(state)) {
+    lockedSessionHasSeenIncomplete = true;
+  }
+}
+
+function maybeAutoUnlockCompletedChecklist(reason: string, state = getChecklistState()) {
+  if (!locked || appMode !== 'locked' || !lockedSessionHasSeenIncomplete || !isChecklistComplete(state)) {
     return false;
   }
 
   unlockToTray(reason);
   return true;
+}
+
+function acquireDisplaySleepBlocker(reason: string) {
+  if (displaySleepBlockerId !== null && powerSaveBlocker.isStarted(displaySleepBlockerId)) {
+    return;
+  }
+
+  // Electron exposes display sleep blocking at the app level. We hold it only
+  // while the primary lock window is active, then release it on unlock/edit/quit.
+  displaySleepBlockerId = powerSaveBlocker.start('prevent-display-sleep');
+  log('Display sleep blocker started', { id: displaySleepBlockerId, reason });
+}
+
+function releaseDisplaySleepBlocker(reason: string) {
+  if (displaySleepBlockerId === null) {
+    return;
+  }
+
+  const blockerId = displaySleepBlockerId;
+
+  if (powerSaveBlocker.isStarted(blockerId)) {
+    powerSaveBlocker.stop(blockerId);
+  }
+
+  displaySleepBlockerId = null;
+  log('Display sleep blocker stopped', { id: blockerId, reason });
 }
 
 function getLogoPath() {
@@ -279,6 +314,7 @@ function getLogoImage() {
 function quitPreFlight() {
   isQuitting = true;
   locked = false;
+  releaseDisplaySleepBlocker('quit');
   closeBlockerWindows();
   app.quit();
 }
@@ -592,7 +628,8 @@ function enterEditMode(reason: string, openSettings = true) {
   appMode = 'edit';
   locked = false;
   openSettingsOnNextLoad = openSettings;
-  lockedSessionStartedIncomplete = false;
+  lockedSessionHasSeenIncomplete = false;
+  releaseDisplaySleepBlocker(`enter edit mode: ${reason}`);
   unregisterLockShortcutBlockers();
   closeBlockerWindows();
   log(`Entering edit mode: ${reason}`);
@@ -614,7 +651,8 @@ function unlockToTray(reason: string) {
   appMode = 'edit';
   locked = false;
   openSettingsOnNextLoad = false;
-  lockedSessionStartedIncomplete = false;
+  lockedSessionHasSeenIncomplete = false;
+  releaseDisplaySleepBlocker(`unlock to tray: ${reason}`);
   unregisterLockShortcutBlockers();
   closeBlockerWindows();
 
@@ -630,17 +668,19 @@ function enterLockedMode(reason: string, options: OverlaySyncOptions = {}) {
   appMode = isOverlayMode ? 'locked' : 'edit';
   locked = appMode === 'locked' && isOverlayMode;
   openSettingsOnNextLoad = false;
-  lockedSessionStartedIncomplete = locked && !isChecklistComplete();
+  lockedSessionHasSeenIncomplete = locked && !isChecklistComplete();
   log(`Entering ${appMode} mode: ${reason}`);
 
   if (!isOverlayMode) {
     unregisterLockShortcutBlockers();
-    lockedSessionStartedIncomplete = false;
+    lockedSessionHasSeenIncomplete = false;
+    releaseDisplaySleepBlocker(`locked mode unavailable: ${reason}`);
     closeBlockerWindows();
     recreateMainWindow('edit');
     return;
   }
 
+  acquireDisplaySleepBlocker(`enter locked mode: ${reason}`);
   registerLockShortcutBlockers();
 
   if (options.recreateBlockers) {
@@ -658,7 +698,7 @@ function configureInitialMode() {
     appMode = isOverlayMode ? 'locked' : 'edit';
     locked = appMode === 'locked' && isOverlayMode;
     openSettingsOnNextLoad = false;
-    lockedSessionStartedIncomplete = locked && !isChecklistComplete();
+    lockedSessionHasSeenIncomplete = locked && !isChecklistComplete();
     log(`Startup/wake lock is enabled; initial mode is ${appMode}`);
     return;
   }
@@ -666,7 +706,7 @@ function configureInitialMode() {
   appMode = 'edit';
   locked = false;
   openSettingsOnNextLoad = true;
-  lockedSessionStartedIncomplete = false;
+  lockedSessionHasSeenIncomplete = false;
   log('Startup/wake lock is disabled; initial mode is edit');
 }
 
@@ -880,6 +920,7 @@ app.whenReady().then(() => {
   globalShortcut.register('CommandOrControl+Shift+U', emergencyUnlock);
 
   if (locked) {
+    acquireDisplaySleepBlocker('startup locked mode');
     registerLockShortcutBlockers();
   }
 
@@ -903,7 +944,10 @@ app.whenReady().then(() => {
 
 ipcMain.handle('preflight:unlock', () => {
   if (strictLockedMode) {
-    if (maybeUnlockCompletedChecklist('completed checklist unlock')) {
+    // Strict mode ignores escape hatches, but the visible Unlock control should
+    // always work once the persisted checklist state is complete.
+    if (locked && appMode === 'locked' && isChecklistComplete()) {
+      unlockToTray('completed checklist unlock');
       return true;
     }
 
@@ -957,7 +1001,8 @@ ipcMain.handle('preflight:get-state', () => {
 
 ipcMain.handle('preflight:set-completion', (_event, itemId: string, completed: boolean) => {
   const state = setChecklistItemCompletion(itemId, completed);
-  maybeUnlockCompletedChecklist('all checklist items completed', state);
+  trackLockedChecklistState(state);
+  maybeAutoUnlockCompletedChecklist('all checklist items completed', state);
   return state;
 });
 
@@ -979,6 +1024,7 @@ ipcMain.handle('preflight:set-startup-enabled', (_event, enabled: boolean) => {
 
 app.on('will-quit', () => {
   globalShortcut.unregisterAll();
+  releaseDisplaySleepBlocker('will quit');
   closeBlockerWindows();
   tray?.destroy();
   tray = null;
