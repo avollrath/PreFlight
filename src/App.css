@@ -388,33 +388,56 @@ button:focus-visible,
   overflow-x: hidden;
   overflow-y: auto;
   scrollbar-width: none;
-  border: 1px solid var(--panel-border);
-  border-radius: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
   padding: 28px;
-  color: var(--text);
-  background: var(--panel-strong);
-  box-shadow:
-    0 0 34px rgba(255, 23, 68, 0.16),
-    0 24px 80px rgba(0, 0, 0, 0.7);
+  color: rgba(255, 255, 255, 0.85);
+  background-color: #1a1a2e;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 24px 24px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.7);
 }
 
 /* Header and description: prominent title with quieter helper copy. */
+.settings-header {
+  align-items: flex-start;
+}
+
+.settings-header > div {
+  width: 100%;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 4px solid var(--accent);
+  padding: 0 0 18px 16px;
+}
+
 .settings-kicker {
   margin: 0 0 6px;
+  color: rgba(255, 255, 255, 0.4);
+  text-shadow: none;
 }
 
 .settings-title {
   margin: 0;
   font-size: clamp(2.5rem, 6vw, 5.2rem);
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: none;
 }
 
 .settings-description {
   max-width: 760px;
   margin: 12px 0 0;
-  color: #d99aa8;
+  color: rgba(255, 255, 255, 0.85);
   font-size: clamp(0.94rem, 1.5vw, 1.08rem);
   line-height: 1.55;
   letter-spacing: 0.04em;
+}
+
+.settings-close {
+  min-height: 32px;
+  border-color: transparent;
+  padding: 0 8px;
+  color: rgba(255, 255, 255, 0.52);
+  background: transparent;
 }
 
 /* Checklist editor: a vertical set of stable rows with remove controls on the right. */
@@ -441,36 +464,67 @@ button:focus-visible,
   min-height: 50px;
   margin-bottom: 8px;
   padding: 0 14px;
-  border: 1px solid var(--accent-dim-line);
-  color: #f0c1ca;
-  background: rgba(255, 23, 68, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.85);
+  background: #2a2a3e;
+  border-radius: 4px;
 }
 
 .settings-item {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 8px;
+  background: #2a2a3e;
 }
 
 .settings-item input {
   min-height: 46px;
   width: 100%;
-  border: 1px solid var(--accent-dim-line);
-  border-radius: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
   padding: 0 12px;
-  color: var(--text);
+  color: rgba(255, 255, 255, 0.85);
   caret-color: var(--accent);
-  background: #090104;
+  background: #202034;
 }
 
 .settings-item input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 16px var(--accent-soft);
+  border-color: rgba(255, 255, 255, 0.28);
+  box-shadow: none;
 }
 
 /* Footer actions: add stays secondary, save remains the primary command. */
 .settings-actions {
   padding-top: 4px;
+}
+
+.settings-add,
+.settings-remove {
+  border-color: rgba(255, 23, 68, 0.38);
+  color: rgba(255, 255, 255, 0.72);
+  background: transparent;
+  box-shadow: none;
+  font-size: 0.8rem;
+}
+
+.settings-save {
+  color: #ffffff;
+  border-color: #cc0000;
+  background: #cc0000;
+  box-shadow: none;
+}
+
+.settings-view button:not(:disabled):hover {
+  box-shadow: none;
+}
+
+.settings-view button:focus-visible,
+.settings-view .settings-item input:focus-visible,
+.settings-view .startup-toggle input:focus-visible {
+  box-shadow: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

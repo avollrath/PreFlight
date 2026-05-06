@@ -186,7 +186,7 @@ function App() {
           {/* Header: identifies the settings area and provides a clear return action. */}
           <header className="settings-header">
             <div>
-              <p className="settings-kicker">Local checklist</p>
+              <p className="settings-kicker">Checklist configuration</p>
               <h1 id="settings-title" className="settings-title">
                 Settings
               </h1>
@@ -194,7 +194,11 @@ function App() {
                 Add the tasks you want to complete before you start using your computer.
               </p>
             </div>
-            <button type="button" className="ghost-button" onClick={() => setShowSettings(false)}>
+            <button
+              type="button"
+              className="ghost-button settings-close"
+              onClick={() => setShowSettings(false)}
+            >
               Close
             </button>
           </header>
@@ -226,7 +230,11 @@ function App() {
                     }
                   }}
                 />
-                <button type="button" className="ghost-button" onClick={() => removeDraftItem(item.id)}>
+                <button
+                  type="button"
+                  className="ghost-button settings-remove"
+                  onClick={() => removeDraftItem(item.id)}
+                >
                   Remove
                 </button>
               </div>
@@ -235,10 +243,10 @@ function App() {
 
           {/* Footer actions: add new rows on the left, save the checklist on the right. */}
           <footer className="settings-actions">
-            <button type="button" className="ghost-button" onClick={addDraftItem}>
+            <button type="button" className="ghost-button settings-add" onClick={addDraftItem}>
               Add item
             </button>
-            <button type="button" onClick={saveSettings}>
+            <button type="button" className="settings-save" onClick={saveSettings}>
               Save checklist
             </button>
           </footer>
