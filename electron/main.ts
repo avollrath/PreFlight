@@ -22,6 +22,7 @@ const isDev =
   process.env.PREFLIGHT_DEV_SAFE === '1' ||
   Boolean(process.env.VITE_DEV_SERVER_URL) ||
   !app.isPackaged;
+const isDebug = process.env.PREFLIGHT_DEV_DEBUG === '1';
 
 let mainWindow: BrowserWindowInstance | null = null;
 let locked = !isDev;
@@ -33,6 +34,12 @@ function log(message: string, extra?: unknown) {
   }
 
   console.log(`[PreFlight] ${message}`, extra);
+}
+
+function debugLog(message: string, extra?: unknown) {
+  if (isDebug) {
+    log(message, extra);
+  }
 }
 
 function fallbackHtml(message: string) {
@@ -118,8 +125,8 @@ function createWindow() {
   Menu.setApplicationMenu(null);
 
   mainWindow = new BrowserWindow({
-    width: isDev ? 1200 : 1280,
-    height: isDev ? 800 : 800,
+    width: isDev ? 1800 : 1280,
+    height: isDev ? 1000 : 800,
     minWidth: 900,
     minHeight: 620,
     title: 'PreFlight',
@@ -180,7 +187,7 @@ function createWindow() {
   });
 
   mainWindow.webContents.on('did-finish-load', () => {
-    log(`Renderer finished loading: ${mainWindow?.webContents.getURL()}`);
+    debugLog(`Renderer finished loading: ${mainWindow?.webContents.getURL()}`);
     mainWindow?.setTitle('PreFlight');
   });
 
@@ -193,7 +200,7 @@ function createWindow() {
   });
 
   mainWindow.webContents.on('console-message', (_event, level, message, line, sourceId) => {
-    log(`Renderer console [${level}] ${sourceId}:${line} ${message}`);
+    debugLog(`Renderer console [${level}] ${sourceId}:${line} ${message}`);
   });
 
   const rendererTarget = process.env.VITE_DEV_SERVER_URL
@@ -215,8 +222,11 @@ function createWindow() {
   if (isDev) {
     mainWindow.show();
     mainWindow.focus();
-    mainWindow.webContents.openDevTools({ mode: 'detach' });
-    logWindowSafetyState();
+
+    if (isDebug) {
+      mainWindow.webContents.openDevTools({ mode: 'detach' });
+      logWindowSafetyState();
+    }
   }
 
   mainWindow.once('ready-to-show', () => {
@@ -227,16 +237,19 @@ function createWindow() {
     }
 
     mainWindow?.focus();
-    logWindowSafetyState();
 
-    if (isDev && !mainWindow?.webContents.isDevToolsOpened()) {
+    if (isDebug) {
+      logWindowSafetyState();
+    }
+
+    if (isDebug && !mainWindow?.webContents.isDevToolsOpened()) {
       mainWindow?.webContents.openDevTools({ mode: 'detach' });
     }
   });
 }
 
 app.whenReady().then(() => {
-  log(`Starting app. isPackaged=${app.isPackaged} isDev=${isDev}`);
+  log(`Starting app. isPackaged=${app.isPackaged} isDev=${isDev} isDebug=${isDebug}`);
   globalShortcut.register('CommandOrControl+Shift+U', emergencyUnlock);
   createWindow();
 });

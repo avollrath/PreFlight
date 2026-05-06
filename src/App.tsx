@@ -10,19 +10,35 @@ const fallbackItems: ChecklistItem[] = [
   { id: 'youtube', text: 'No YouTube before 18:00', completed: false }
 ];
 
+type DraftChecklistItem = {
+  id: string;
+  text: string;
+};
+
+function createDraftItem(text = ''): DraftChecklistItem {
+  return {
+    id: crypto.randomUUID(),
+    text
+  };
+}
+
+function toDraftItems(items: Array<Pick<ChecklistItem, 'id' | 'text'>>): DraftChecklistItem[] {
+  return items.map((item) => ({ id: item.id, text: item.text }));
+}
+
 function App() {
   const [state, setState] = useState<ChecklistState>({
     date: new Date().toISOString().slice(0, 10),
     items: fallbackItems
   });
   const [showSettings, setShowSettings] = useState(false);
-  const [draftItems, setDraftItems] = useState(fallbackItems.map((item) => item.text));
+  const [draftItems, setDraftItems] = useState<DraftChecklistItem[]>(toDraftItems(fallbackItems));
   const [startupEnabled, setStartupEnabled] = useState(false);
 
   useEffect(() => {
     void window.preflight?.getState().then((nextState) => {
       setState(nextState);
-      setDraftItems(nextState.items.map((item) => item.text));
+      setDraftItems(toDraftItems(nextState.items));
     });
     void window.preflight?.getStartupEnabled().then(setStartupEnabled);
   }, []);
@@ -66,24 +82,24 @@ function App() {
     void window.preflight?.unlock();
   }
 
-  function updateDraftItem(index: number, value: string) {
+  function updateDraftItem(itemId: string, value: string) {
     setDraftItems((current) =>
-      current.map((item, currentIndex) => (currentIndex === index ? value : item))
+      current.map((item) => (item.id === itemId ? { ...item, text: value } : item))
     );
   }
 
   function addDraftItem() {
-    setDraftItems((current) => [...current, '']);
+    setDraftItems((current) => [...current, createDraftItem()]);
   }
 
-  function removeDraftItem(index: number) {
-    setDraftItems((current) => current.filter((_item, currentIndex) => currentIndex !== index));
+  function removeDraftItem(itemId: string) {
+    setDraftItems((current) => current.filter((item) => item.id !== itemId));
   }
 
   function saveSettings() {
-    void window.preflight?.saveItems(draftItems).then((nextState) => {
+    void window.preflight?.saveItems(draftItems.map((item) => item.text)).then((nextState) => {
       setState(nextState);
-      setDraftItems(nextState.items.map((item) => item.text));
+      setDraftItems(toDraftItems(nextState.items));
       setShowSettings(false);
     });
   }
@@ -171,13 +187,18 @@ function App() {
                 </label>
 
                 {draftItems.map((item, index) => (
-                  <div className="settings-item" key={`${index}-${item}`}>
+                  <div className="settings-item" key={item.id}>
                     <input
-                      value={item}
+                      value={item.text}
                       aria-label={`Checklist item ${index + 1}`}
-                      onChange={(event) => updateDraftItem(index, event.target.value)}
+                      onChange={(event) => updateDraftItem(item.id, event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.currentTarget.blur();
+                        }
+                      }}
                     />
-                    <button type="button" className="ghost-button" onClick={() => removeDraftItem(index)}>
+                    <button type="button" className="ghost-button" onClick={() => removeDraftItem(item.id)}>
                       Remove
                     </button>
                   </div>

@@ -28,12 +28,18 @@ npm install
 npm run dev
 ```
 
-`npm run dev` uses safe development mode. It opens a normal resizable window, does not use fullscreen, does not stay always-on-top, does not block close, and opens DevTools automatically.
+`npm run dev` uses safe development mode. It opens a normal `1800x1000` resizable window, does not use fullscreen, does not stay always-on-top, and does not block close.
 
 You can also run the safe script explicitly:
 
 ```bash
 npm run dev:safe
+```
+
+Use debug mode when you want DevTools and verbose renderer diagnostics:
+
+```bash
+npm run dev:debug
 ```
 
 During MVP development, use **Dev Unlock** or `Ctrl+Shift+U` if the window is in your way. The shortcut is handled in the Electron main process, so it still works if React fails to load.
@@ -89,7 +95,13 @@ Launch safe mode:
 npm run dev:safe
 ```
 
-Logs are printed in the terminal running `npm run dev`. The Electron main process logs the renderer URL or file it is loading, failed load events, renderer exits, renderer console messages, and the development window safety state.
+Launch debug mode:
+
+```bash
+npm run dev:debug
+```
+
+Logs are printed in the terminal running the dev command. Normal dev logs the app startup and renderer target. Debug mode also logs renderer console messages, renderer load completion, and the development window safety state.
 
 If you need to kill the app from PowerShell:
 
