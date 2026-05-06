@@ -8,18 +8,21 @@ Strict locked mode disables **Dev Unlock** and `Ctrl+Shift+U` while locked. The 
 
 - Windowed edit mode on startup with settings open unless startup/wake locking is enabled
 - Fullscreen, frameless, always-on-top checklist overlay on demand, startup, or resume
-- Secondary monitor blocker overlays while locked
-- Dark 80s-inspired neon dashboard theme
+- Secondary monitor blocker overlays while locked (covers all secondary displays)
+- Dark 80s-inspired neon dashboard theme with Electrolize font and animated scan bar
 - Daily checklist completion state stored locally
-- Editable checklist items in the settings panel
+- Editable checklist items in the full-window settings panel
 - Windowed setup mode for editing without monitor blockers
 - System tray controls for edit mode, lock now, and quit
 - Automatic unlock when every checklist item is complete
-- Disabled Dev Unlock button in strict locked mode
-- Disabled `Ctrl+Shift+U` emergency unlock while strict locked mode is active
-- Windows login startup toggle
+- Strict locked mode disables Dev Unlock button and `Ctrl+Shift+U` emergency unlock
+- Focus reinforcement and kiosk-style window behavior while locked
+- Display sleep prevention during locked mode
+- Disabled `Alt+Tab` and `Win+Arrow` shortcuts while locked (best-effort)
+- Windows login startup toggle with automatic lock on startup and resume
 - Current-user Windows Task Scheduler helper for workstation unlock
 - Windows packaging through electron-builder
+- Debug mode with DevTools and verbose diagnostics
 
 ## Setup
 
