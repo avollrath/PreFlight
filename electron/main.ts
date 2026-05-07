@@ -66,6 +66,7 @@ let openSettingsOnNextLoad = true;
 let lockedSessionHasSeenIncomplete = false;
 let displaySleepBlockerId: number | null = null;
 let stopLockFocusEnforcement: (() => void) | null = null;
+let rendererFailureActive = false;
 
 function log(message: string, extra?: unknown) {
   if (extra === undefined) {
@@ -294,6 +295,88 @@ function restoreExplorerIfKilled(reason: string) {
 
   log(`Restoring Explorer: ${reason}`);
   restoreExplorer();
+}
+
+function rendererFailureHtml() {
+  return `data:text/html;charset=utf-8,${encodeURIComponent(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body {
+            background: #1a0000;
+            color: #ff4444;
+            font-family: monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+            padding: 32px;
+            box-sizing: border-box;
+          }
+          h1 { font-size: 18px; margin-bottom: 12px; }
+          p { color: rgba(255,255,255,0.6); font-size: 13px; margin: 6px 0; }
+          button {
+            margin-top: 24px;
+            padding: 10px 24px;
+            background: transparent;
+            border: 1px solid #ff4444;
+            color: #ff4444;
+            font-family: monospace;
+            font-size: 14px;
+            cursor: pointer;
+            letter-spacing: 0.1em;
+          }
+          button:hover { background: rgba(255,68,68,0.1); }
+        </style>
+      </head>
+      <body>
+        <h1>PreFlight could not load the renderer</h1>
+        <p>The lock screen failed to start correctly.</p>
+        <p>Your desktop has been unlocked automatically.</p>
+        <button onclick="window.close()">CLOSE PREFLIGHT</button>
+      </body>
+      </html>
+    `)}`;
+}
+
+function handleRendererFailure(window: BrowserWindowInstance) {
+  if (rendererFailureActive || window.isDestroyed()) {
+    return;
+  }
+
+  rendererFailureActive = true;
+
+  restoreExplorer();
+  appMode = 'edit';
+  locked = false;
+  lockedSessionHasSeenIncomplete = false;
+  openSettingsOnNextLoad = false;
+  isQuitting = true;
+
+  stopLockFocusEnforcement?.();
+  stopLockFocusEnforcement = null;
+  globalShortcut.unregisterAll();
+  releaseDisplaySleepBlocker('renderer failure');
+  closeBlockerWindows();
+
+  if (window.isFullScreen()) {
+    window.setFullScreen(false);
+  }
+
+  window.setKiosk(false);
+  window.setAlwaysOnTop(false);
+  window.setSize(600, 400);
+  window.center();
+  window.show();
+  window.focus();
+
+  void window.webContents.loadURL(rendererFailureHtml()).catch((error) => {
+    console.error('Failed to load renderer:', error);
+  });
 }
 
 function getLogoPath() {
@@ -578,11 +661,8 @@ function createWindow(mode: AppMode = appMode) {
         return;
       }
 
-      const message = `Failed to load ${validatedUrl}: ${errorCode} ${errorDescription}`;
-      log(message);
-      void mainWindow?.loadURL(fallbackHtml(message)).catch((error) => {
-        console.error('Failed to load renderer:', error);
-      });
+      console.error('Renderer failed to load:', errorCode, errorDescription);
+      handleRendererFailure(window);
     }
   );
 
@@ -597,7 +677,12 @@ function createWindow(mode: AppMode = appMode) {
   });
 
   window.webContents.on('render-process-gone', (_event, details) => {
-    log('Renderer process exited', details);
+    if (isRecreatingMainWindow || isQuitting) {
+      return;
+    }
+
+    console.error('Renderer process gone:', details.reason);
+    handleRendererFailure(window);
   });
 
   window.webContents.on('crashed', () => {
