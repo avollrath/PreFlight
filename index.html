@@ -63,7 +63,6 @@ const config = {
   bendStartZ: -150.0,
   floorLength: 132.75,
   wallHeight: 200.0,
-  // Red palette for PreFlight
   color0: '#8b0000',
   color1: '#cc1111',
   color2: '#ff2222',
@@ -156,14 +155,12 @@ blurPass = new ShaderPass(foregroundBlurShader);
 composer.addPass(blurPass);
 composer.addPass(new OutputPass());
 
-// Floor
 const floorMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.85, depthWrite: false, side: THREE.DoubleSide });
 floorMesh = new THREE.Mesh(new THREE.BufferGeometry(), floorMat);
 floorMesh.position.set(0, -0.5, -0.5);
 floorMesh.renderOrder = 1;
 scene.add(floorMesh);
 
-// Trails
 const group = new THREE.Group();
 scene.add(group);
 
