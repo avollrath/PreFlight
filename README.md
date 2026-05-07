@@ -6,7 +6,7 @@ PreFlight sits between waking your computer and falling into autopilot. It opens
 
 ## Screenshots / Visual
 
-<!-- screenshot -->
+![PreFlight lock screen](src/assets/preview.jpg)
 
 ## Features
 
