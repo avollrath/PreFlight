@@ -476,6 +476,9 @@ function createTray() {
   // nativeImage keeps the tray icon portable across Windows, macOS, and Linux.
   tray = new Tray(getLogoImage());
   tray.setToolTip('PreFlight');
+  tray.on('click', () => {
+    tray?.popUpContextMenu();
+  });
   updateTrayMenu();
 }
 
