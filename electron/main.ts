@@ -67,6 +67,7 @@ let lockedSessionHasSeenIncomplete = false;
 let displaySleepBlockerId: number | null = null;
 let stopLockFocusEnforcement: (() => void) | null = null;
 let rendererFailureActive = false;
+let lockHardeningEngaged = false;
 
 function log(message: string, extra?: unknown) {
   if (extra === undefined) {
@@ -270,6 +271,7 @@ function registerEmergencyUnlockShortcut() {
 }
 
 function activateLockModeHardening(window: BrowserWindowInstance, reason: string) {
+  lockHardeningEngaged = true;
   registerBlockedShortcuts(globalShortcut);
 
   stopLockFocusEnforcement?.();
@@ -279,7 +281,39 @@ function activateLockModeHardening(window: BrowserWindowInstance, reason: string
   log(`Lock mode hardening activated: ${reason}`);
 }
 
+function engageLockModeWhenRendererLoads(
+  window: BrowserWindowInstance,
+  reason: string,
+  options: OverlaySyncOptions = {}
+) {
+  let rendererLoaded = false;
+
+  const loadTimeout = setTimeout(() => {
+    if (rendererLoaded || window.isDestroyed() || appMode !== 'locked' || !locked) {
+      return;
+    }
+
+    console.error('Renderer load timeout — triggering failure fallback');
+    handleRendererFailure(window);
+  }, 8000);
+
+  window.webContents.once('did-finish-load', () => {
+    rendererLoaded = true;
+    clearTimeout(loadTimeout);
+
+    if (rendererFailureActive || window.isDestroyed() || appMode !== 'locked' || !locked) {
+      return;
+    }
+
+    console.log('Renderer loaded successfully, engaging lock mode');
+    activateLockModeHardening(window, reason);
+    syncOverlayWindows({ forceRepaint: options.forceRepaint ?? options.recreateBlockers });
+    scheduleOverlayRefreshes(reason, options);
+  });
+}
+
 function deactivateLockModeHardening(reason: string) {
+  lockHardeningEngaged = false;
   stopLockFocusEnforcement?.();
   stopLockFocusEnforcement = null;
   unregisterBlockedShortcuts(globalShortcut);
@@ -353,6 +387,7 @@ function handleRendererFailure(window: BrowserWindowInstance) {
   restoreExplorer();
   appMode = 'edit';
   locked = false;
+  lockHardeningEngaged = false;
   lockedSessionHasSeenIncomplete = false;
   openSettingsOnNextLoad = false;
   isQuitting = true;
@@ -713,7 +748,6 @@ function createWindow(mode: AppMode = appMode) {
       window.setFullScreen(true);
       window.setKiosk(true);
       window.setAlwaysOnTop(true, 'screen-saver', 1);
-      syncOverlayWindows();
     }
 
     window.focus();
@@ -787,6 +821,7 @@ function unlockToTray(reason: string) {
 function enterLockedMode(reason: string, options: OverlaySyncOptions = {}) {
   appMode = isOverlayMode ? 'locked' : 'edit';
   locked = appMode === 'locked' && isOverlayMode;
+  lockHardeningEngaged = false;
   openSettingsOnNextLoad = false;
   lockedSessionHasSeenIncomplete = locked && !isChecklistComplete();
   log(`Entering ${appMode} mode: ${reason}`);
@@ -807,8 +842,7 @@ function enterLockedMode(reason: string, options: OverlaySyncOptions = {}) {
   }
 
   const window = recreateMainWindow('locked');
-  activateLockModeHardening(window, `enter locked mode: ${reason}`);
-  scheduleOverlayRefreshes(reason, options);
+  engageLockModeWhenRendererLoads(window, `enter locked mode: ${reason}`, options);
 }
 
 function configureInitialMode() {
@@ -970,7 +1004,7 @@ function forceBlockerVisible(
 }
 
 function syncOverlayWindows(options: OverlaySyncOptions = {}) {
-  if (!isOverlayMode || appMode !== 'locked' || !locked) {
+  if (!isOverlayMode || appMode !== 'locked' || !locked || !lockHardeningEngaged) {
     return;
   }
 
@@ -1066,7 +1100,7 @@ app.whenReady().then(() => {
   const startupWindow = createWindow(appMode);
 
   if (locked) {
-    activateLockModeHardening(startupWindow, 'startup locked mode');
+    engageLockModeWhenRendererLoads(startupWindow, 'startup locked mode', { forceRepaint: true });
   }
 
   powerMonitor.on('resume', () => {
@@ -1078,9 +1112,7 @@ app.whenReady().then(() => {
     log('Power resume detected; startup/wake lock is disabled');
   });
 
-  if (isOverlayMode && appMode === 'locked') {
-    scheduleOverlayRefreshes('startup');
-  }
+  // Startup lock hardening is engaged only after the renderer confirms it loaded.
 });
 
 ipcMain.handle('preflight:unlock', () => {
@@ -1238,7 +1270,7 @@ app.on('activate', () => {
     const window = createWindow(appMode);
 
     if (locked) {
-      activateLockModeHardening(window, 'activate');
+      engageLockModeWhenRendererLoads(window, 'activate', { forceRepaint: true });
     }
   }
 });
