@@ -395,6 +395,7 @@ function handleRendererFailure(window: BrowserWindowInstance) {
   lockedSessionHasSeenIncomplete = false;
   openSettingsOnNextLoad = false;
   isQuitting = true;
+  updateTrayMenu();
 
   stopLockFocusEnforcement?.();
   stopLockFocusEnforcement = null;
@@ -440,36 +441,59 @@ function getLogoImage() {
 function quitPreFlight() {
   isQuitting = true;
   locked = false;
+  updateTrayMenu();
   releaseDisplaySleepBlocker('quit');
   closeBlockerWindows();
   app.quit();
 }
 
+function openSettingsWindow(reason = 'tray settings') {
+  enterEditMode(reason);
+}
+
+function updateTrayMenu() {
+  if (!tray) {
+    return;
+  }
+
+  const template = locked
+    ? [
+        { label: 'PreFlight — Locked', enabled: false as const },
+        { type: 'separator' as const },
+        {
+          label: 'Quit',
+          click: quitPreFlight
+        }
+      ]
+    : [
+        {
+          label: 'Settings',
+          click: () => openSettingsWindow('tray menu')
+        },
+        {
+          label: 'Lock Now',
+          click: () => enterLockedMode('tray menu')
+        },
+        { type: 'separator' as const },
+        {
+          label: 'Quit',
+          click: quitPreFlight
+        }
+      ];
+
+  tray.setContextMenu(Menu.buildFromTemplate(template));
+}
+
 function createTray() {
   if (tray) {
+    updateTrayMenu();
     return;
   }
 
   // nativeImage keeps the tray icon portable across Windows, macOS, and Linux.
   tray = new Tray(getLogoImage());
   tray.setToolTip('PreFlight');
-  tray.setContextMenu(
-    Menu.buildFromTemplate([
-      {
-        label: 'Open Edit Mode',
-        click: () => enterEditMode('tray menu')
-      },
-      {
-        label: 'Lock Now',
-        click: () => enterLockedMode('tray menu')
-      },
-      { type: 'separator' },
-      {
-        label: 'Quit',
-        click: quitPreFlight
-      }
-    ])
-  );
+  updateTrayMenu();
 }
 
 function applyLoginItemSetting(enabled: boolean) {
@@ -787,6 +811,7 @@ function enterEditMode(reason: string, openSettings = true) {
   locked = false;
   openSettingsOnNextLoad = openSettings;
   lockedSessionHasSeenIncomplete = false;
+  updateTrayMenu();
   releaseDisplaySleepBlocker(`enter edit mode: ${reason}`);
   deactivateLockModeHardening(`enter edit mode: ${reason}`);
   closeBlockerWindows();
@@ -810,6 +835,7 @@ function unlockToTray(reason: string) {
   locked = false;
   openSettingsOnNextLoad = false;
   lockedSessionHasSeenIncomplete = false;
+  updateTrayMenu();
   releaseDisplaySleepBlocker(`unlock to tray: ${reason}`);
   deactivateLockModeHardening(`unlock to tray: ${reason}`);
   closeBlockerWindows();
@@ -828,6 +854,7 @@ function enterLockedMode(reason: string, options: OverlaySyncOptions = {}) {
   lockHardeningEngaged = false;
   openSettingsOnNextLoad = false;
   lockedSessionHasSeenIncomplete = locked && !isChecklistComplete();
+  updateTrayMenu();
   log(`Entering ${appMode} mode: ${reason}`);
 
   if (!isOverlayMode) {
@@ -865,6 +892,7 @@ function configureInitialMode() {
   locked = false;
   openSettingsOnNextLoad = !hasChecklistItems();
   lockedSessionHasSeenIncomplete = false;
+  updateTrayMenu();
   log('Startup/wake lock is disabled; initial mode is tray');
 }
 
