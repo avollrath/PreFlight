@@ -535,16 +535,16 @@ button:focus-visible,
 .settings-kicker {
   margin: 0 0 6px;
   color: rgba(200, 40, 40, 0.5);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 400;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.18em;
   text-shadow: none;
 }
 
 .settings-title {
   margin: 0;
-  color: #ffffff;
-  font-size: 48px;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 36px;
   font-weight: 400;
   line-height: 1;
   text-shadow: none;
@@ -553,7 +553,7 @@ button:focus-visible,
 .settings-description {
   max-width: 760px;
   margin: 10px 0 0;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.45);
   font-size: 13px;
   font-weight: 400;
   line-height: 1.45;
@@ -564,7 +564,7 @@ button:focus-visible,
   min-height: 32px;
   border: none;
   padding: 0;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.45);
   background: transparent;
   font-size: 11px;
   letter-spacing: 0.15em;
@@ -572,7 +572,7 @@ button:focus-visible,
 }
 
 .settings-close:not(:disabled):hover {
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.85);
   background: transparent;
   transform: none;
 }
@@ -596,10 +596,10 @@ button:focus-visible,
 .settings-list::before {
   content: "YOUR CHECKLIST";
   margin-bottom: 2px;
-  color: rgba(200, 40, 40, 0.5);
-  font-size: 10px;
+  color: rgba(200, 40, 40, 0.7);
+  font-size: 11px;
   font-weight: 400;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.18em;
 }
 
 .settings-list::-webkit-scrollbar {
@@ -640,7 +640,7 @@ button:focus-visible,
   border: 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   color: rgba(255, 255, 255, 0.85);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 400;
   background: transparent;
   border-radius: 0;
@@ -659,8 +659,8 @@ button:focus-visible,
 .settings-toggle-description {
   display: block;
   margin-top: 2px;
-  color: rgba(255, 255, 255, 0.35);
-  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 12px;
   line-height: 1.35;
   letter-spacing: 0;
   text-transform: none;
@@ -682,9 +682,9 @@ button:focus-visible,
   width: 100%;
   border: none;
   padding: 0;
-  color: rgba(255, 255, 255, 0.85);
+  color: rgba(255, 255, 255, 0.9);
   font-family: inherit;
-  font-size: 14px;
+  font-size: 15px;
   caret-color: var(--accent);
   background: transparent;
 }
@@ -706,11 +706,18 @@ button:focus-visible,
   border: 1px solid rgba(200, 40, 40, 0.25);
   border-radius: 3px;
   padding: 4px 10px;
-  color: rgba(200, 40, 40, 0.6);
   background: transparent;
   box-shadow: none;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.12em;
+}
+
+.settings-add {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.settings-remove {
+  color: rgba(200, 40, 40, 0.7);
 }
 
 .settings-save {
