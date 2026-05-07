@@ -2,11 +2,11 @@
 
 A Windows Electron app that blocks my desktop until I finish a checklist.
 
-I built this because I kept sitting down at my computer and immediately opening Slack, email, or YouTube before doing anything I meant to do. I wanted a little wall in front of the desktop: drink water, check the calendar, pick priorities, then start. PreFlight is that wall.
+I built this because I kept sitting down at my computer and immediately opening Slack, email, or YouTube before doing anything I meant to do. The idea is to set the list the night before: laundry, clean the kitchen, vacuum, groceries, whatever tomorrow-me should handle before getting pulled into the computer. PreFlight is the little wall between waking the PC and pretending those things do not exist.
 
 ![PreFlight lock screen](src/assets/preview.jpg)
 
-When the PC boots or wakes, PreFlight can open as a fullscreen lock screen. I check off the list, and when the last item is done the overlay closes and the desktop comes back. If I need to change the list, I do that in setup mode.
+When the PC boots or wakes the next day, PreFlight can open as a fullscreen lock screen. I check off the list I left for myself, and when the last item is done the overlay closes and the desktop comes back. If I need to change tomorrow's list, I do that in setup mode.
 
 ## Features
 
