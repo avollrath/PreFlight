@@ -859,6 +859,8 @@ function enterLockedMode(reason: string, options: OverlaySyncOptions = {}) {
 
 function configureInitialMode() {
   if (isDev) {
+    setStartOnStartupWakeEnabled(false);
+    console.log('[PreFlight] Dev mode: reset startOnBoot to false in store');
     appMode = 'edit';
     locked = false;
     openSettingsOnNextLoad = !hasChecklistItems();
