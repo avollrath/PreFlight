@@ -63,7 +63,6 @@ let locked = false;
 let isRecreatingMainWindow = false;
 let isQuitting = false;
 let openSettingsOnNextLoad = true;
-let lockedSessionHasSeenIncomplete = false;
 let displaySleepBlockerId: number | null = null;
 let stopLockFocusEnforcement: (() => void) | null = null;
 let rendererFailureActive = false;
@@ -223,27 +222,6 @@ function hasChecklistItems(state = getChecklistState()) {
   return state.items.length > 0;
 }
 
-function trackLockedChecklistState(state = getChecklistState()) {
-  if (!locked || appMode !== 'locked') {
-    return;
-  }
-
-  // Manual lock reopen can start with an already-complete checklist. Only
-  // auto-unlock after this locked session has actually observed incomplete work.
-  if (!isChecklistComplete(state)) {
-    lockedSessionHasSeenIncomplete = true;
-  }
-}
-
-function maybeAutoUnlockCompletedChecklist(reason: string, state = getChecklistState()) {
-  if (!locked || appMode !== 'locked' || !lockedSessionHasSeenIncomplete || !isChecklistComplete(state)) {
-    return false;
-  }
-
-  unlockToTray(reason);
-  return true;
-}
-
 function acquireDisplaySleepBlocker(reason: string) {
   if (displaySleepBlockerId !== null && powerSaveBlocker.isStarted(displaySleepBlockerId)) {
     return;
@@ -392,7 +370,6 @@ function handleRendererFailure(window: BrowserWindowInstance) {
   appMode = 'edit';
   locked = false;
   lockHardeningEngaged = false;
-  lockedSessionHasSeenIncomplete = false;
   openSettingsOnNextLoad = false;
   isQuitting = true;
   updateTrayMenu();
@@ -815,7 +792,6 @@ function enterEditMode(reason: string, openSettings = true) {
   appMode = 'edit';
   locked = false;
   openSettingsOnNextLoad = openSettings;
-  lockedSessionHasSeenIncomplete = false;
   updateTrayMenu();
   releaseDisplaySleepBlocker(`enter edit mode: ${reason}`);
   deactivateLockModeHardening(`enter edit mode: ${reason}`);
@@ -841,7 +817,6 @@ function unlockToTray(reason: string) {
   appMode = 'edit';
   locked = false;
   openSettingsOnNextLoad = false;
-  lockedSessionHasSeenIncomplete = false;
   updateTrayMenu();
   releaseDisplaySleepBlocker(`unlock to tray: ${reason}`);
   deactivateLockModeHardening(`unlock to tray: ${reason}`);
@@ -860,13 +835,11 @@ function enterLockedMode(reason: string, options: OverlaySyncOptions = {}) {
   locked = appMode === 'locked' && isOverlayMode;
   lockHardeningEngaged = false;
   openSettingsOnNextLoad = false;
-  lockedSessionHasSeenIncomplete = locked && !isChecklistComplete();
   updateTrayMenu();
   log(`Entering ${appMode} mode: ${reason}`);
 
   if (!isOverlayMode) {
     deactivateLockModeHardening(`locked mode unavailable: ${reason}`);
-    lockedSessionHasSeenIncomplete = false;
     releaseDisplaySleepBlocker(`locked mode unavailable: ${reason}`);
     closeBlockerWindows();
     recreateMainWindow('edit');
@@ -890,7 +863,6 @@ function configureInitialMode() {
     appMode = isOverlayMode ? 'locked' : 'edit';
     locked = appMode === 'locked' && isOverlayMode;
     openSettingsOnNextLoad = false;
-    lockedSessionHasSeenIncomplete = locked && !isChecklistComplete();
     log(`Startup/wake lock is enabled; initial mode is ${appMode}`);
     return;
   }
@@ -898,7 +870,6 @@ function configureInitialMode() {
   appMode = 'edit';
   locked = false;
   openSettingsOnNextLoad = !hasChecklistItems();
-  lockedSessionHasSeenIncomplete = false;
   updateTrayMenu();
   log('Startup/wake lock is disabled; initial mode is tray');
 }
@@ -1228,8 +1199,6 @@ ipcMain.handle('preflight:get-state', () => {
 
 ipcMain.handle('preflight:set-completion', (_event, itemId: string, completed: boolean) => {
   const state = setChecklistItemCompletion(itemId, completed);
-  trackLockedChecklistState(state);
-  maybeAutoUnlockCompletedChecklist('all checklist items completed', state);
   return state;
 });
 
