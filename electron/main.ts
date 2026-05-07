@@ -43,10 +43,11 @@ const {
 const isDev =
   process.env.PREFLIGHT_DEV_SAFE === '1' ||
   process.env.PREFLIGHT_DEV_LOCKED === '1' ||
+  process.env.NODE_ENV === 'development' ||
   Boolean(process.env.VITE_DEV_SERVER_URL) ||
   !app.isPackaged;
 const isDebug = process.env.PREFLIGHT_DEV_DEBUG === '1';
-const isOverlayMode = !isDebug && (!isDev || process.env.PREFLIGHT_DEV_LOCKED === '1');
+const isOverlayMode = !isDebug && !isDev;
 const strictLockedMode = true;
 
 let mainWindow: BrowserWindowInstance | null = null;
@@ -857,6 +858,15 @@ function enterLockedMode(reason: string, options: OverlaySyncOptions = {}) {
 }
 
 function configureInitialMode() {
+  if (isDev) {
+    appMode = 'edit';
+    locked = false;
+    openSettingsOnNextLoad = !hasChecklistItems();
+    updateTrayMenu();
+    console.log('[PreFlight] Dev mode: ignoring startup lock setting, starting in tray');
+    return;
+  }
+
   const shouldLockOnStart = getStartOnStartupWakeEnabled();
 
   if (shouldLockOnStart) {
