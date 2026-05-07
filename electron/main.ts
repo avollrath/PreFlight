@@ -836,6 +836,8 @@ function enterEditMode(reason: string, openSettings = true) {
 
 function unlockToTray(reason: string) {
   log(`Unlocking to tray: ${reason}`);
+  restoreExplorer();
+  console.log('[PreFlight] Explorer restore called on unlock');
   appMode = 'edit';
   locked = false;
   openSettingsOnNextLoad = false;
