@@ -2,6 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net; connect-src 'self' https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:;"
+    />
     <!-- ES Module Shims for import maps -->
     <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
 
