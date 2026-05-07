@@ -613,16 +613,17 @@ function clampWindowedContentHeight(height: number) {
 function createWindow(mode: AppMode = appMode) {
   Menu.setApplicationMenu(null);
   const primaryDisplayBounds = screen.getPrimaryDisplay().bounds;
-  const { height: workHeight } = screen.getPrimaryDisplay().workAreaSize;
+  const { height: workHeight, width: workWidth } = screen.getPrimaryDisplay().workAreaSize;
   const shouldLockWindow = mode === 'locked' && isOverlayMode;
-  const settingsHeight = Math.round(workHeight * 0.8);
-  const settingsWidth = Math.round(settingsHeight * (4 / 3));
-  const windowedHeight = Math.max(600, settingsHeight);
-  const windowedWidth = Math.min(1100, Math.max(700, settingsWidth));
+  const settingsHeight = Math.min(Math.round(workHeight * 0.75), 800);
+  const settingsWidth = Math.min(Math.round(workWidth * 0.55), 960);
+  const windowedHeight = Math.max(540, settingsHeight);
+  const windowedWidth = Math.max(680, settingsWidth);
 
   const window = new BrowserWindow({
     x: shouldLockWindow ? primaryDisplayBounds.x : undefined,
     y: shouldLockWindow ? primaryDisplayBounds.y : undefined,
+    center: !shouldLockWindow,
     width: shouldLockWindow ? primaryDisplayBounds.width : windowedWidth,
     height: shouldLockWindow ? primaryDisplayBounds.height : windowedHeight,
     minWidth: 700,
