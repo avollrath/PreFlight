@@ -301,7 +301,6 @@ function deactivateLockModeHardening(reason: string) {
   stopLockFocusEnforcement = null;
   unregisterBlockedShortcuts(globalShortcut);
   registerEmergencyUnlockShortcut();
-  restoreExplorer();
   log(`Lock mode hardening deactivated: ${reason}`);
 }
 
