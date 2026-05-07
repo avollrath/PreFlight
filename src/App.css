@@ -482,8 +482,8 @@ button:focus-visible,
 
 .settings-view {
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
-  gap: 22px;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+  gap: 0;
   width: min(1400px, calc(100vw - 96px));
   max-width: 100%;
   height: calc(100vh - clamp(40px, 6vw, 96px));
@@ -521,6 +521,7 @@ button:focus-visible,
 /* Header and description: prominent title with quieter helper copy. */
 .settings-header {
   align-items: flex-start;
+  margin-bottom: 22px;
   padding-bottom: 28px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
@@ -582,7 +583,7 @@ button:focus-visible,
   align-content: start;
   gap: 10px;
   min-height: 0;
-  margin: 0;
+  margin: 22px 0 0;
   overflow-x: hidden;
   overflow-y: auto;
   scrollbar-width: none;
@@ -607,7 +608,7 @@ button:focus-visible,
   align-items: center;
   gap: 12px;
   height: auto;
-  min-height: 0;
+  min-height: unset;
   margin: 0;
   padding: 10px 0;
   border: 0;
@@ -669,6 +670,7 @@ button:focus-visible,
 
 /* Footer actions: add stays secondary, save remains the primary command. */
 .settings-actions {
+  margin-top: 22px;
   padding-top: 4px;
 }
 
