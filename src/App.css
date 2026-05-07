@@ -492,12 +492,11 @@ button:focus-visible,
   overflow-y: auto;
   scrollbar-width: none;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 2px solid rgba(200, 20, 20, 0.6);
   border-radius: 4px;
-  padding: 28px;
+  padding: 40px;
   color: rgba(255, 255, 255, 0.85);
-  background-color: #1a1a2e;
-  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 24px 24px;
+  background: radial-gradient(ellipse at center, #111111 60%, #1a0000 100%);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.7);
   opacity: 0;
   transform: translateY(-8px);
@@ -517,43 +516,59 @@ button:focus-visible,
 /* Header and description: prominent title with quieter helper copy. */
 .settings-header {
   align-items: flex-start;
+  padding-bottom: 28px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .settings-header > div {
   width: 100%;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  border-left: 4px solid var(--accent);
-  padding: 0 0 18px 16px;
+  border-left: 3px solid rgba(200, 20, 20, 0.7);
+  padding-left: 16px;
 }
 
 .settings-kicker {
   margin: 0 0 6px;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(200, 40, 40, 0.5);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
   text-shadow: none;
 }
 
 .settings-title {
   margin: 0;
-  font-size: clamp(2.5rem, 6vw, 5.2rem);
-  color: rgba(255, 255, 255, 0.92);
+  color: #ffffff;
+  font-size: 48px;
+  font-weight: 800;
+  line-height: 1;
   text-shadow: none;
 }
 
 .settings-description {
   max-width: 760px;
-  margin: 12px 0 0;
-  color: rgba(255, 255, 255, 0.85);
-  font-size: clamp(0.94rem, 1.5vw, 1.08rem);
-  line-height: 1.55;
-  letter-spacing: 0.04em;
+  margin: 10px 0 0;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.45;
+  letter-spacing: 0;
 }
 
 .settings-close {
   min-height: 32px;
-  border-color: transparent;
-  padding: 0 8px;
-  color: rgba(255, 255, 255, 0.52);
+  border: none;
+  padding: 0;
+  color: rgba(255, 255, 255, 0.3);
   background: transparent;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  box-shadow: none;
+}
+
+.settings-close:not(:disabled):hover {
+  color: rgba(255, 255, 255, 0.7);
+  background: transparent;
+  transform: none;
 }
 
 /* Checklist editor: a vertical set of stable rows with remove controls on the right. */
@@ -566,6 +581,15 @@ button:focus-visible,
   overflow-x: hidden;
   overflow-y: auto;
   scrollbar-width: none;
+}
+
+.settings-list::before {
+  content: "YOUR CHECKLIST";
+  margin-bottom: 2px;
+  color: rgba(200, 40, 40, 0.5);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
 }
 
 .settings-list::-webkit-scrollbar {
@@ -584,8 +608,14 @@ button:focus-visible,
   border: 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+  font-weight: 400;
   background: transparent;
   border-radius: 0;
+}
+
+.startup-toggle input {
+  accent-color: #cc1111;
 }
 
 .settings-toggle-copy {
@@ -595,10 +625,12 @@ button:focus-visible,
 }
 
 .settings-toggle-description {
-  color: rgba(255, 255, 255, 0.48);
-  font-size: 0.78rem;
-  line-height: 1.45;
-  letter-spacing: 0.02em;
+  display: block;
+  margin-top: 2px;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 11px;
+  line-height: 1.35;
+  letter-spacing: 0;
   text-transform: none;
 }
 
@@ -606,25 +638,27 @@ button:focus-visible,
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 4px;
-  padding: 8px;
-  background: #2a2a3e;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .settings-item input {
-  min-height: 46px;
+  min-height: 0;
   width: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  padding: 0 12px;
+  border: none;
+  padding: 0;
   color: rgba(255, 255, 255, 0.85);
+  font-family: inherit;
+  font-size: 14px;
   caret-color: var(--accent);
-  background: #202034;
+  background: transparent;
 }
 
 .settings-item input:focus {
-  border-color: rgba(255, 255, 255, 0.28);
+  border-color: transparent;
   box-shadow: none;
 }
 
@@ -635,18 +669,41 @@ button:focus-visible,
 
 .settings-add,
 .settings-remove {
-  border-color: rgba(255, 23, 68, 0.38);
-  color: rgba(255, 255, 255, 0.72);
+  min-height: 0;
+  border: 1px solid rgba(200, 40, 40, 0.25);
+  border-radius: 3px;
+  padding: 4px 10px;
+  color: rgba(200, 40, 40, 0.6);
   background: transparent;
   box-shadow: none;
-  font-size: 0.8rem;
+  font-size: 10px;
+  letter-spacing: 0.12em;
 }
 
 .settings-save {
+  min-height: 0;
+  border: none;
+  border-radius: 4px;
+  padding: 12px 28px;
   color: #ffffff;
-  border-color: #cc0000;
-  background: #cc0000;
+  background: #cc1111;
   box-shadow: none;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+}
+
+.settings-add:not(:disabled):hover,
+.settings-remove:not(:disabled):hover {
+  border-color: rgba(255, 60, 60, 0.5);
+  color: rgba(255, 60, 60, 0.9);
+  background: transparent;
+  transform: none;
+}
+
+.settings-save:not(:disabled):hover {
+  background: #e01111;
+  transform: none;
 }
 
 .settings-view button:not(:disabled):hover {
