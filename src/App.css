@@ -20,13 +20,7 @@
   place-items: center;
   padding: clamp(20px, 3vw, 48px);
   overflow: hidden;
-  background:
-    repeating-linear-gradient(0deg, rgba(255, 23, 68, 0.035) 0 1px, transparent 1px 4px),
-    linear-gradient(rgba(255, 23, 68, 0.055) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 23, 68, 0.045) 1px, transparent 1px),
-    radial-gradient(circle at 50% 0%, rgba(255, 23, 68, 0.15), transparent 38%),
-    linear-gradient(135deg, #050104 0%, #140309 45%, #000 100%);
-  background-size: auto, 42px 42px, 42px 42px, auto, auto;
+  background: transparent;
 }
 
 .preflight-panel {
