@@ -462,11 +462,15 @@ function loadRenderer(window: BrowserWindowInstance) {
   );
 
   if (process.env.VITE_DEV_SERVER_URL) {
-    void window.loadURL(process.env.VITE_DEV_SERVER_URL);
+    void window.loadURL(process.env.VITE_DEV_SERVER_URL).catch((error) => {
+      console.error('Failed to load renderer:', error);
+    });
     return;
   }
 
-  void window.loadFile(rendererTarget);
+  void window.loadFile(rendererTarget).catch((error) => {
+    console.error('Failed to load renderer:', error);
+  });
 }
 
 function clampWindowedContentHeight(height: number) {
@@ -566,11 +570,21 @@ function createWindow(mode: AppMode = appMode) {
     }
   });
 
-  window.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedUrl) => {
-    const message = `Failed to load ${validatedUrl}: ${errorCode} ${errorDescription}`;
-    log(message);
-    void mainWindow?.loadURL(fallbackHtml(message));
-  });
+  window.webContents.on(
+    'did-fail-load',
+    (_event, errorCode, errorDescription, validatedUrl, isMainFrame) => {
+      if (!isMainFrame) {
+        debugLog(`Ignored non-main-frame load failure: ${validatedUrl}: ${errorCode} ${errorDescription}`);
+        return;
+      }
+
+      const message = `Failed to load ${validatedUrl}: ${errorCode} ${errorDescription}`;
+      log(message);
+      void mainWindow?.loadURL(fallbackHtml(message)).catch((error) => {
+        console.error('Failed to load renderer:', error);
+      });
+    }
+  );
 
   window.webContents.on('did-finish-load', () => {
     debugLog(`Renderer finished loading: ${mainWindow?.webContents.getURL()}`);
@@ -816,7 +830,9 @@ function createBlockerWindow(display: Display) {
     forceBlockerVisible(blocker, display);
   });
 
-  void blocker.loadURL(blockerHtml());
+  void blocker.loadURL(blockerHtml()).catch((error) => {
+    console.error('Failed to load renderer:', error);
+  });
   blockerWindows.set(display.id, blocker);
   log('Created secondary display blocker', { id: display.id, bounds: display.bounds });
   return blocker;
