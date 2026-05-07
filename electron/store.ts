@@ -23,14 +23,6 @@ type StoreData = {
   };
 };
 
-const defaultItems = [
-  'Drink water',
-  "Review today's top 3 priorities",
-  'Check calendar',
-  'Open task tracker',
-  'No YouTube before 18:00'
-];
-
 const storePath = path.join(app.getPath('userData'), 'preflight-store.json');
 
 function todayKey() {
@@ -41,7 +33,7 @@ function todayKey() {
 
 function createDefaultStore(): StoreData {
   return {
-    items: defaultItems.map((text) => ({ id: randomUUID(), text })),
+    items: [],
     completionsByDate: {},
     settings: {
       startOnStartupWake: false,
@@ -55,7 +47,7 @@ function readStore(): StoreData {
     const raw = fs.readFileSync(storePath, 'utf8');
     const parsed = JSON.parse(raw) as Partial<StoreData>;
 
-    if (!Array.isArray(parsed.items) || parsed.items.length === 0) {
+    if (!Array.isArray(parsed.items)) {
       return createDefaultStore();
     }
 
@@ -120,7 +112,7 @@ export function saveChecklistItems(texts: string[]) {
     }));
 
   const data: StoreData = {
-    items: items.length > 0 ? items : createDefaultStore().items,
+    items,
     completionsByDate: existing.completionsByDate,
     settings: existing.settings
   };

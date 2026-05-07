@@ -219,6 +219,10 @@ function isChecklistComplete(state = getChecklistState()) {
   return state.items.length > 0 && state.items.every((item) => item.completed);
 }
 
+function hasChecklistItems(state = getChecklistState()) {
+  return state.items.length > 0;
+}
+
 function trackLockedChecklistState(state = getChecklistState()) {
   if (!locked || appMode !== 'locked') {
     return;
@@ -859,9 +863,9 @@ function configureInitialMode() {
 
   appMode = 'edit';
   locked = false;
-  openSettingsOnNextLoad = true;
+  openSettingsOnNextLoad = !hasChecklistItems();
   lockedSessionHasSeenIncomplete = false;
-  log('Startup/wake lock is disabled; initial mode is edit');
+  log('Startup/wake lock is disabled; initial mode is tray');
 }
 
 function createBlockerWindow(display: Display) {
@@ -1097,10 +1101,13 @@ app.whenReady().then(() => {
 
   registerDisplayHandlers();
   createTray();
-  const startupWindow = createWindow(appMode);
 
   if (locked) {
+    const startupWindow = createWindow(appMode);
     engageLockModeWhenRendererLoads(startupWindow, 'startup locked mode', { forceRepaint: true });
+  } else if (!hasChecklistItems()) {
+    log('Checklist is empty; opening settings on first launch');
+    createWindow('edit');
   }
 
   powerMonitor.on('resume', () => {
