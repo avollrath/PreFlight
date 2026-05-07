@@ -1,186 +1,73 @@
 # PreFlight
 
-PreFlight is a Windows-first Electron productivity gate. It starts in a windowed setup mode for editing your checklist, then can switch into a fullscreen checklist overlay when you choose **Lock now** or when startup/wake locking is enabled.
+A Windows-first Electron checklist gate for starting the day deliberately.
 
-Strict locked mode disables **Dev Unlock** and `Ctrl+Shift+U` while locked. The lock closes only when every checklist item is complete.
+PreFlight sits between waking your computer and falling into autopilot. It opens in setup mode for editing a daily checklist, then can switch into a locked fullscreen overlay that only releases when every item is complete. The interesting part is the combination: a practical local productivity tool, a hardened Electron windowing experiment, and a deliberately cinematic lock screen built with React, Three.js, and a red neon visual system.
+
+## Screenshots / Visual
+
+<!-- screenshot -->
 
 ## Features
 
-- Windowed edit mode on startup with settings open unless startup/wake locking is enabled
-- Fullscreen, frameless, always-on-top checklist overlay on demand, startup, or resume
-- Secondary monitor blocker overlays while locked (covers all secondary displays)
-- Dark 80s-inspired neon dashboard theme with Electrolize font and animated scan bar
-- Daily checklist completion state stored locally
-- Editable checklist items in the full-window settings panel
-- Windowed setup mode for editing without monitor blockers
-- System tray controls for edit mode, lock now, and quit
-- Automatic unlock when every checklist item is complete
-- Strict locked mode disables Dev Unlock button and `Ctrl+Shift+U` emergency unlock
-- Focus reinforcement and kiosk-style window behavior while locked
-- Display sleep prevention during locked mode
-- Disabled `Alt+Tab` and `Win+Arrow` shortcuts while locked (best-effort)
-- Windows login startup toggle with automatic lock on startup and resume
-- Current-user Windows Task Scheduler helper for workstation unlock
-- Windows packaging through electron-builder
-- Debug mode with DevTools and verbose diagnostics
+### Lock Screen
 
-## Setup
+- The lock screen gates the desktop behind a local checklist and unlocks automatically once every item is complete.
+- The primary overlay uses a bundled Three.js neon corridor background with WebGL shaders, bloom, SMAA, foreground blur, and no external CDN script requests.
+- The interface uses the Coda typeface from Google Fonts, with a red 80s dashboard treatment layered over the animated corridor.
+- The scan bar uses a soft falloff beam and an invisible reset sweep, so the animation reads like light instead of a sliding block.
+- The progress bar includes segment ticks, a glowing fill, and a bright leading tip that makes checklist progress legible at a glance.
+- Locked mode can cover secondary monitors with blocker windows, or leave them usable when the user disables secondary screen blocking.
+
+### Setup & Configuration
+
+- Setup mode and locked mode are visually distinct, so editing the checklist never feels like being trapped in the lock surface.
+- The settings screen is a full-window charcoal panel with its own quieter aesthetic, separate from the red lock dashboard.
+- Checklist items are editable locally, with daily completion state reset by local date.
+- The edit window resizes to fit the current checklist height, clamped to the primary display work area.
+- Settings include startup/wake locking and a secondary screen blocking toggle for workflows that keep music, reference material, or chat visible.
+- User-facing copy is plain language throughout the app; the UI avoids development jargon even though the internals are intentionally inspectable.
+
+## How It Works
+
+PreFlight has two modes. Setup mode is a normal window for editing the checklist and choosing how aggressive the lock should be. Locked mode is a fullscreen, frameless, always-on-top overlay on the primary monitor. When secondary blocking is enabled, the app also creates blocker windows for every non-primary display.
+
+The checklist is the gate. Item definitions and completion state live in Electron's `userData` directory, and completion is keyed by local date. In locked mode, checking the final item automatically tears down the overlay, closes secondary blockers, restores the desktop state, and leaves PreFlight available from the system tray.
+
+The visual direction is intentionally specific: black glass, red instrumentation, Coda lettering, and a moving Three.js corridor under the UI. The background is bundled through Vite from the local `three` package, and the renderer CSP allows the local shader compilation path required by WebGL without adding external script domains.
+
+## Getting Started
 
 ```bash
 npm install
-```
-
-## Development
-
-```bash
 npm run dev
 ```
 
-`npm run dev` starts in edit mode with Settings open. Closing the main window with the `X` hides it to the system tray instead of quitting. Use **Lock now** from the app or tray when you want the real overlay: fullscreen on the primary monitor, secondary monitor blocker windows, always-on-top behavior, and blocked `Alt+F4` while locked.
-
-Strict locked mode intentionally disables development escape routes while locked:
-
-- Clicking **Dev Unlock Disabled** has no effect
-- Pressing `Ctrl+Shift+U` has no effect
-
-Completing every checklist item closes the primary overlay, closes secondary blockers, and leaves PreFlight running in the tray. Use the tray menu's **Open Edit Mode** item to reopen setup mode.
-
-While locked, PreFlight uses kiosk windows, always-on-top overlays, focus reinforcement, and best-effort Electron shortcut registration for common task-switching shortcuts such as `Alt+Tab` and `Win+Arrow`. Some Windows-reserved keys may require OS kiosk policy to block completely; PreFlight intentionally avoids invasive low-level keyboard hooks.
-
-Use **Setup mode** or **Settings** to edit checklist items. Saving checklist changes stays in setup mode. Use **Lock now** when you want to return to the fullscreen overlay and secondary monitor blockers. Setup mode is not persisted; a fresh app launch starts in edit mode with Settings open unless **Start PreFlight when Windows starts/wakes up** is enabled.
-
-PreFlight also adds a system tray icon using the app logo. Its tooltip is **PreFlight**, and its menu includes **Open Edit Mode**, **Lock Now**, and **Quit**.
-
-Use debug mode when you want a safer troubleshooting window with DevTools and verbose renderer diagnostics:
-
-```bash
-npm run dev:debug
-```
-
-`npm run dev:debug` uses a normal primary-monitor window instead of the locked fullscreen multi-monitor overlay. It does not create secondary blocker windows, which makes it the safer troubleshooting mode.
-
-`npm run dev:safe` is kept as an alias for debug mode:
-
-```bash
-npm run dev:safe
-```
-
-The UI uses an 80s neon dashboard style with the Electrolize font, red system-status controls, terminal-like panels, and a lightweight animated scan bar.
-
-## Build And Run
+Build the app:
 
 ```bash
 npm run build
+```
+
+Run the built Electron app:
+
+```bash
 npm run start
 ```
 
-## Package For Windows
+## Development Modes
 
-Create an unpacked executable:
-
-```bash
-npm run package
-```
-
-The executable is written to:
-
-```text
-release/win-unpacked/PreFlight.exe
-```
-
-Create the installer target:
-
-```bash
-npm run dist
-```
-
-Build output is ignored by git.
-
-## Local Data
-
-PreFlight stores local configuration in Electron's `userData` folder as `preflight-store.json`.
-
-The checklist definitions are stored locally. Completion state is keyed by local date, so the checklist automatically starts fresh when the date changes.
-
-To reset local app data on Windows, close PreFlight and remove:
-
-```powershell
-Remove-Item "$env:APPDATA\PreFlight" -Recurse -Force
-```
-
-## Diagnostics
-
-If PreFlight opens black in development, press `Ctrl+Shift+U` first. It should leave the locked overlay and open setup mode even if the renderer is broken.
-
-Launch debug mode:
-
-```bash
-npm run dev:debug
-```
-
-Launch the debug alias:
-
-```bash
-npm run dev:safe
-```
-
-Logs are printed in the terminal running the dev command. Normal dev logs the app startup and renderer target. Debug mode also logs renderer console messages, renderer load completion, and the development window safety state.
-
-If you need to kill the app from PowerShell:
-
-```powershell
-Get-Process electron,PreFlight -ErrorAction SilentlyContinue | Stop-Process -Force
-```
-
-If the app behaves strangely after editing settings, reset local data with the `Remove-Item "$env:APPDATA\PreFlight" -Recurse -Force` command above.
-
-## Windows Startup
-
-Open **Settings** in PreFlight and enable **Start PreFlight when Windows starts/wakes up**.
-
-The toggle is stored in PreFlight's local JSON data and uses Electron's login item support for the current OS user. When enabled, PreFlight starts in locked fullscreen mode on app launch and re-enters locked mode after `powerMonitor.resume`. Development mode no longer ignores this setting, although Windows login startup is most reliable from a packaged `PreFlight.exe`.
-
-## Workstation Unlock Task
-
-Package the app first:
-
-```bash
-npm run package
-```
-
-Install the current-user unlock task from PowerShell:
-
-```powershell
-.\scripts\windows\install-wakeup-task.ps1
-```
-
-If the executable is somewhere else, pass it explicitly:
-
-```powershell
-.\scripts\windows\install-wakeup-task.ps1 -AppPath "C:\Path\To\PreFlight.exe"
-```
-
-Remove the task:
-
-```powershell
-.\scripts\windows\uninstall-wakeup-task.ps1
-```
-
-The MVP uses the reliable workstation unlock trigger. Wake-from-sleep event timing varies across Windows hardware and power states, so unlock is the fallback trigger for this version.
-
-## Safety Notes
-
-PreFlight does not install low-level keyboard hooks, block `Ctrl+Alt+Del`, replace Explorer, or use a separate Windows user. It is a normal desktop app with development escape hatches.
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Runs the Vite renderer and Electron app with the normal lock-capable development path. |
+| `npm run dev:debug` | Runs a safer windowed debugging mode with DevTools and verbose renderer diagnostics. |
+| `npm run dev:safe` | Alias for `npm run dev:debug`. |
 
 ## Lock Hardening
 
-PreFlight hardens locked mode with Electron user-space controls plus Windows shell suppression. While locked, it registers no-op handlers for `Alt+Tab`, `Alt+F4`, `Win+D`, `Win+L`, `Win+M`, `Win+Left`, `Win+Right`, `Win+Up`, `Win+Down`, `Win+Tab`, `Ctrl+Escape`, `Win+E`, and `Win+R`. These registrations are best-effort: Windows reserves some combinations before Electron can receive them, especially `Ctrl+Alt+Del`, the Windows key by itself, and workstation lock behavior such as `Win+L`.
+PreFlight hardens lock mode only after the renderer reports a successful load. If the renderer fails to load, crashes, or does not finish within eight seconds, the app disengages the lock, restores Explorer, closes blocker windows, and shows a safe exit screen instead of leaving the user behind a broken overlay.
 
-On Windows, PreFlight kills `explorer.exe` during locked mode to remove the taskbar, Start menu, desktop shell, and shell launch surfaces. Explorer is restored when the checklist unlocks, when lock mode exits, and from app exit handlers such as `before-quit`, `will-quit`, `SIGTERM`, process exit, and uncaught exception handling. Explorer control is skipped on non-Windows platforms.
-
-The primary lock window uses blur recapture after 50ms and a 200ms focus enforcement interval. The interval calls `focus()` and `moveTop()` when the primary lock window loses focus, which helps recover from task switching, z-order changes, and compositor edge cases that are not covered by a single blur event.
-
-Monitor bounds are clamped while locked. The primary lock window is reset to the primary display bounds if moved or resized, and every secondary blocker window is reset to its assigned display bounds. This counters window snapping and `Win+Arrow` movement when Electron or Windows allows a move event through.
+While locked, PreFlight combines Electron user-space controls with Windows shell suppression. It keeps the primary window fullscreen and topmost, refocuses it after blur events, clamps monitor bounds when Windows moves a window, optionally covers secondary displays, prevents display sleep, and restores Explorer when lock mode ends or the app exits.
 
 | Surface | Electron User-Space Status | Notes |
 | --- | --- | --- |
@@ -193,3 +80,47 @@ Monitor bounds are clamped while locked. The primary lock window is reset to the
 | Windows key alone | Not reliably blockable | Reserved shell behavior; user-space Electron apps should not depend on intercepting it. |
 | `Win+L` | Not reliably blockable | Workstation locking is OS-reserved on many Windows configurations. |
 | Power button, firmware keys, external admin tools | Not blockable | Requires OS policy, kiosk configuration, or hardware/MDM controls outside Electron. |
+
+## Configuration & Local Data
+
+PreFlight stores its checklist, daily completions, and settings in Electron's `userData` directory as `preflight-store.json`. On Windows, that is under the app data folder for the current user. To reset everything, close PreFlight and remove the app data directory:
+
+```powershell
+Remove-Item "$env:APPDATA\PreFlight" -Recurse -Force
+```
+
+The startup/wake setting is controlled from Settings and uses Electron's login item support. When enabled, PreFlight starts in locked mode on launch and re-enters locked mode after `powerMonitor.resume`. The secondary screen blocking setting is also stored locally; when it is off, only the primary monitor is blocked during locked mode.
+
+## Windows Packaging
+
+Create an unpacked Windows executable:
+
+```bash
+npm run package
+```
+
+Create the installer target:
+
+```bash
+npm run dist
+```
+
+The unpacked executable is written to:
+
+```text
+release/win-unpacked/PreFlight.exe
+```
+
+## Workstation Unlock Task
+
+PreFlight includes a current-user Task Scheduler helper that launches the packaged app when the workstation unlocks. Package the app first, then install or remove the task from PowerShell:
+
+```powershell
+.\scripts\windows\install-wakeup-task.ps1
+.\scripts\windows\install-wakeup-task.ps1 -AppPath "C:\Path\To\PreFlight.exe"
+.\scripts\windows\uninstall-wakeup-task.ps1
+```
+
+## Safety Notes
+
+PreFlight is a productivity tool, not a kiosk operating system. It intentionally stays in user-space Electron and avoids kernel hooks, blocking `Ctrl+Alt+Del`, permanently replacing Explorer, or creating a separate Windows user. That restraint is part of the design: the app can make distraction harder, recover cleanly from renderer failure, and restore the desktop without pretending to own security boundaries that Windows reserves for the OS.
