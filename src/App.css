@@ -579,14 +579,18 @@ button:focus-visible,
 
 /* Checklist editor: a vertical set of stable rows with remove controls on the right. */
 .settings-list {
+  position: relative;
   display: grid;
   align-content: start;
   gap: 10px;
   min-height: 0;
+  max-height: 100%;
   margin: 22px 0 0;
   overflow-x: hidden;
   overflow-y: auto;
-  scrollbar-width: none;
+  padding-bottom: 40px;
+  scrollbar-color: rgba(200, 20, 20, 0.4) transparent;
+  scrollbar-width: thin;
 }
 
 .settings-list::before {
@@ -599,8 +603,30 @@ button:focus-visible,
 }
 
 .settings-list::-webkit-scrollbar {
-  width: 0;
-  height: 0;
+  width: 4px;
+}
+
+.settings-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.settings-list::-webkit-scrollbar-thumb {
+  border-radius: 2px;
+  background: rgba(200, 20, 20, 0.4);
+}
+
+.settings-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(220, 40, 40, 0.7);
+}
+
+.settings-list::after {
+  content: "";
+  position: sticky;
+  bottom: 0;
+  height: 40px;
+  margin-top: -40px;
+  background: linear-gradient(to bottom, transparent, rgba(10, 10, 10, 0.9));
+  pointer-events: none;
 }
 
 .startup-toggle {

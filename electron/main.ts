@@ -610,24 +610,22 @@ function clampWindowedContentHeight(height: number) {
   return Math.min(Math.max(Math.ceil(height), 600), maxHeight);
 }
 
-function getWindowedContentHeight() {
-  const checklistItemCount = getChecklistState().items.length;
-  const estimatedHeight = 120 + 30 + 120 + checklistItemCount * 70 + 80 + 40;
-  return clampWindowedContentHeight(estimatedHeight);
-}
-
 function createWindow(mode: AppMode = appMode) {
   Menu.setApplicationMenu(null);
   const primaryDisplayBounds = screen.getPrimaryDisplay().bounds;
+  const { height: workHeight } = screen.getPrimaryDisplay().workAreaSize;
   const shouldLockWindow = mode === 'locked' && isOverlayMode;
-  const windowedHeight = getWindowedContentHeight();
+  const settingsHeight = Math.round(workHeight * 0.8);
+  const settingsWidth = Math.round(settingsHeight * (4 / 3));
+  const windowedHeight = Math.max(600, settingsHeight);
+  const windowedWidth = Math.min(1100, Math.max(700, settingsWidth));
 
   const window = new BrowserWindow({
     x: shouldLockWindow ? primaryDisplayBounds.x : undefined,
     y: shouldLockWindow ? primaryDisplayBounds.y : undefined,
-    width: shouldLockWindow ? primaryDisplayBounds.width : 1800,
+    width: shouldLockWindow ? primaryDisplayBounds.width : windowedWidth,
     height: shouldLockWindow ? primaryDisplayBounds.height : windowedHeight,
-    minWidth: 900,
+    minWidth: 700,
     minHeight: 600,
     title: 'PreFlight',
     icon: getLogoImage(),
@@ -657,6 +655,8 @@ function createWindow(mode: AppMode = appMode) {
     window.setBounds(primaryDisplayBounds);
     window.setKiosk(true);
     window.setAlwaysOnTop(true, 'screen-saver', 1);
+  } else {
+    window.center();
   }
 
   window.on('close', (event: ElectronEvent) => {
