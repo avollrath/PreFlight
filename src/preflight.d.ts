@@ -31,6 +31,7 @@ declare global {
       getState: () => Promise<ChecklistState>;
       setCompletion: (itemId: string, completed: boolean) => Promise<ChecklistState>;
       saveItems: (texts: string[]) => Promise<ChecklistState>;
+      hideSettingsWindow: () => Promise<boolean>;
       getStartupEnabled: () => Promise<boolean>;
       setStartupEnabled: (enabled: boolean) => Promise<boolean>;
     };

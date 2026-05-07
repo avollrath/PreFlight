@@ -157,6 +157,15 @@ function App() {
     setSettingsVisible(false);
   }
 
+  function hideSettingsWindow() {
+    setSettingsVisible(false);
+    void window.preflight?.hideSettingsWindow().then((hidden) => {
+      if (hidden) {
+        setShowSettings(false);
+      }
+    });
+  }
+
   function finishSettingsClose(event: TransitionEvent<HTMLElement>) {
     if (event.target !== event.currentTarget || settingsVisible) {
       return;
@@ -183,7 +192,6 @@ function App() {
     void window.preflight?.saveItems(draftItems.map((item) => item.text)).then((nextState) => {
       setState(nextState);
       setDraftItems(toDraftItems(nextState.items));
-      closeSettings();
     });
   }
 
@@ -219,7 +227,7 @@ function App() {
             <button
               type="button"
               className="ghost-button settings-close"
-              onClick={closeSettings}
+              onClick={hideSettingsWindow}
             >
               Close
             </button>

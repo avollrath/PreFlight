@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld('preflight', {
   setCompletion: (itemId: string, completed: boolean) =>
     ipcRenderer.invoke('preflight:set-completion', itemId, completed),
   saveItems: (texts: string[]) => ipcRenderer.invoke('preflight:save-items', texts),
+  hideSettingsWindow: () => ipcRenderer.invoke('preflight:hide-settings-window'),
   getStartupEnabled: () => ipcRenderer.invoke('preflight:get-startup-enabled'),
   setStartupEnabled: (enabled: boolean) =>
     ipcRenderer.invoke('preflight:set-startup-enabled', enabled)

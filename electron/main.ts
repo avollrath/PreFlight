@@ -448,6 +448,11 @@ function quitPreFlight() {
 }
 
 function openSettingsWindow(reason = 'tray settings') {
+  if (locked) {
+    console.log('Settings blocked — app is locked');
+    return;
+  }
+
   enterEditMode(reason);
 }
 
@@ -1204,6 +1209,15 @@ ipcMain.handle('preflight:lock-now', () => {
     overlay: isOverlayMode,
     openSettings: false
   };
+});
+
+ipcMain.handle('preflight:hide-settings-window', () => {
+  if (locked) {
+    return false;
+  }
+
+  mainWindow?.hide();
+  return true;
 });
 
 ipcMain.handle('preflight:get-state', () => {
